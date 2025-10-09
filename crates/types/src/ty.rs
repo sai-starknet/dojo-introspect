@@ -1,7 +1,7 @@
 use crate::parsed::{self, Parse};
 use crate::parsed::{Parsed, U256};
 use cainome_cairo_serde::{ByteArray, Bytes31};
-use num_traits::{ToPrimitive, Zero};
+use num_traits::{One, ToPrimitive, Zero};
 use starknet_types_core::felt::Felt;
 use std::collections::{HashMap, VecDeque};
 
@@ -195,12 +195,16 @@ impl Parse for DojoTy {
 }
 
 fn deserialize_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Box<DojoTy>> {
-    data.remove(0);
+    if data.pop_front()? != Felt::ONE {
+        return None;
+    }
     DojoTy::deserialize(data, legacy).map(Box::new)
 }
 
 fn deserialize_fixed_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<(Box<DojoTy>, u32)> {
-    data.remove(0);
+    if data.pop_front()?.is_one() {
+        return None;
+    }
     let ty = DojoTy::deserialize(data, legacy).map(Box::new)?;
     let size = data.pop_front()?.to_u32()?;
     Some((ty, size))
