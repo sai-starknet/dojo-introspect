@@ -1,5 +1,5 @@
-use dojo_introspect_types::ty::DojoMember;
 use dojo_introspect_utils::selector::compute_selector_from_dojo_tag;
+use introspect_types::FieldDef;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::{
@@ -7,23 +7,34 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub struct DojoManager<Store> {
+pub struct SimpleManager<Store> {
     pub tables: HashMap<Felt, DojoTable>,
     pub store: Store,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DojoTable {
     pub name: String,
-    pub fields: HashMap<Felt, DojoMember>,
+    pub fields: HashMap<Felt, FieldDef>,
     pub record_order: Vec<Felt>,
 }
 
 impl DojoTable {
-    fn get_schema(&self) -> Vec<DojoMember> {
+    fn get_schema(&self) -> Vec<FieldDef> {
         self.record_order
             .iter()
             .filter_map(|selector| self.fields.get(selector).cloned())
             .collect()
+    }
+}
+
+impl SimpleManager<JsonStore> {
+    pub fn new(path: &Path) -> Self {
+        let store = JsonStore::new(path);
+
+        Self {
+            tables: HashMap::new(),
+            store,
+        }
     }
 }
 
@@ -84,11 +95,11 @@ pub trait IntrospectManager {
     fn get_table_fields(&self, table_id: Felt) -> Option<Vec<Self::Field>>;
 }
 
-impl<Store> IntrospectManager for DojoManager<Store>
+impl<Store> IntrospectManager for SimpleManager<Store>
 where
     Store: StoreTrait<Table = DojoTable>,
 {
-    type Field = DojoMember;
+    type Field = FieldDef;
     type Table = DojoTable;
     fn register_table(&mut self, id: Felt, name: &str, fields: Vec<Self::Field>) -> bool {
         if self.tables.contains_key(&id) {
@@ -151,6 +162,6 @@ where
     fn get_table_fields(&self, table_id: Felt) -> Option<Vec<Self::Field>> {
         self.tables
             .get(&table_id)
-            .map(|table| table.fields.values().cloned().collect::<Vec<DojoMember>>())
+            .map(|table| table.fields.values().cloned().collect::<Vec<_>>())
     }
 }

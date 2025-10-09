@@ -12,6 +12,7 @@ num-traits.workspace = true
 cainome-cairo-serde.workspace = true
 dojo-introspect-types = { path = "../types" }
 dojo-introspect-utils = { path = "../utils" }
+introspect-types.workspace = true
 serde.workspace = true
 serde_json = "1.0.145"
 
