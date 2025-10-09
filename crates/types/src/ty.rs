@@ -388,12 +388,12 @@ impl DojoTySerde for DojoTy {
 }
 
 mod tests {
+
     use std::collections::VecDeque;
 
-    use crate::parsed::Parse;
-
     use super::{DojoStruct, DojoTySerde};
-    use starknet_types_core::{felt::Felt, short_string::ShortString};
+    use crate::parsed::Parse;
+    use starknet_types_core::felt::Felt;
     fn test_schema_felts() -> Vec<Felt> {
         vec![
             "0x41747461636b576974684e616d65",
