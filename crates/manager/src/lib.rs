@@ -2,23 +2,22 @@ use dojo_introspect_utils::selector::compute_selector_from_dojo_tag;
 use introspect_types::FieldDef;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 pub struct SimpleManager<Store> {
-    pub tables: HashMap<Felt, DojoTable>,
+    pub tables: HashMap<Felt, Table>,
     pub store: Store,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DojoTable {
+pub struct Table {
     pub name: String,
     pub fields: HashMap<Felt, FieldDef>,
     pub record_order: Vec<Felt>,
 }
 
-impl DojoTable {
+impl Table {
     fn get_schema(&self) -> Vec<FieldDef> {
         self.record_order
             .iter()
@@ -30,10 +29,29 @@ impl DojoTable {
 impl SimpleManager<JsonStore> {
     pub fn new(path: &Path) -> Self {
         let store = JsonStore::new(path);
-
-        Self {
+        let mut manager = Self {
             tables: HashMap::new(),
             store,
+        };
+        manager.load_tables();
+        manager
+    }
+
+    pub fn load_tables(&mut self) {
+        let paths = fs::read_dir(&self.store.path).unwrap();
+        for path in paths {
+            let path = path.unwrap().path();
+            let table_id = path
+                .file_name()
+                .and_then(|p| json_file_name_to_felt(p.to_str()?));
+            let data: Option<Table> =
+                serde_json::from_str(&fs::read_to_string(&path).unwrap()).ok();
+            match (table_id, data) {
+                (Some(id), Some(table)) => {
+                    self.tables.insert(id, table);
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -66,8 +84,13 @@ fn felt_to_json_file_name(felt: &Felt) -> String {
     format!("{}.json", felt_to_fixed_hex_string(felt))
 }
 
+fn json_file_name_to_felt(file_name: &str) -> Option<Felt> {
+    let hex_str = file_name.strip_suffix(".json")?;
+    Felt::from_hex(hex_str).ok()
+}
+
 impl StoreTrait for JsonStore {
-    type Table = DojoTable;
+    type Table = Table;
 
     fn dump(&self, table_id: Felt, data: &Self::Table) -> bool {
         let file_path = self.path.join(felt_to_json_file_name(&table_id));
@@ -97,10 +120,10 @@ pub trait IntrospectManager {
 
 impl<Store> IntrospectManager for SimpleManager<Store>
 where
-    Store: StoreTrait<Table = DojoTable>,
+    Store: StoreTrait<Table = Table>,
 {
     type Field = FieldDef;
-    type Table = DojoTable;
+    type Table = Table;
     fn register_table(&mut self, id: Felt, name: &str, fields: Vec<Self::Field>) -> bool {
         if self.tables.contains_key(&id) {
             return false;
@@ -112,7 +135,7 @@ where
             record_order.push(field_selector);
             field_map.insert(field_selector, field);
         }
-        let table = DojoTable {
+        let table = Table {
             name: name.to_string(),
             fields: field_map,
             record_order,
