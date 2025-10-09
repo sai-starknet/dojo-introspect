@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use starknet_types_core::felt::Felt;
 
+#[derive(Debug)]
 pub enum Parsed {
     None,
     Bool(bool),
@@ -28,22 +29,26 @@ pub enum Parsed {
     FixedArray(Vec<Parsed>),
 }
 
+#[derive(Debug)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,
 }
 
+#[derive(Debug)]
 pub struct Member {
     pub name: String,
     pub attrs: Vec<String>,
     pub value: Parsed,
 }
 
+#[derive(Debug)]
 pub struct Struct {
     pub name: String,
     pub attrs: Vec<String>,
     pub children: Vec<Member>,
 }
+#[derive(Debug)]
 pub struct Enum {
     pub name: String,
     pub attrs: Vec<String>,
