@@ -2,9 +2,10 @@ use crate::parsed::{self, Parse};
 use crate::parsed::{Parsed, U256};
 use cainome_cairo_serde::{ByteArray, Bytes31};
 use num_traits::{One, ToPrimitive, Zero};
+use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::{HashMap, VecDeque};
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DojoTy {
     None,
     Primitive(DojoPrimitive),
@@ -43,7 +44,7 @@ pub mod primitive {
         Felt::from_hex_unchecked("0x737461726b6e65743a3a45746841646472657373");
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DojoPrimitive {
     Bool,
     U8,
@@ -63,27 +64,27 @@ pub enum DojoPrimitive {
     EthAddress,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DojoStruct {
     pub name: String,
     pub attrs: Vec<Felt>,
     pub children: Vec<DojoMember>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DojoVariant {
     pub name: String,
     pub ty: DojoTy,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DojoEnum {
     pub name: String,
     pub attrs: Vec<Felt>,
     pub variants: HashMap<Felt, DojoVariant>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DojoMember {
     pub name: String,
     pub attrs: Vec<Felt>,
@@ -226,29 +227,32 @@ impl Parse for DojoTy {
     }
 }
 
-fn deserialize_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Box<DojoTy>> {
+fn dojo_deserialize_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Box<DojoTy>> {
     if data.pop_front()? != Felt::ONE {
         return None;
     }
-    DojoTy::deserialize(data, legacy).map(Box::new)
+    DojoTy::dojo_deserialize(data, legacy).map(Box::new)
 }
 
-fn deserialize_fixed_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<(Box<DojoTy>, u32)> {
+fn dojo_deserialize_fixed_array(
+    data: &mut VecDeque<Felt>,
+    legacy: bool,
+) -> Option<(Box<DojoTy>, u32)> {
     if data.pop_front()?.is_one() {
         return None;
     }
-    let ty = DojoTy::deserialize(data, legacy).map(Box::new)?;
+    let ty = DojoTy::dojo_deserialize(data, legacy).map(Box::new)?;
     let size = data.pop_front()?.to_u32()?;
     Some((ty, size))
 }
-fn deserialize_tuple(data: &mut VecDeque<Felt>, legacy: bool) -> Option<DojoTy> {
+fn dojo_deserialize_tuple(data: &mut VecDeque<Felt>, legacy: bool) -> Option<DojoTy> {
     let len = data.pop_front()?.to_usize()?;
     if len == 0 {
         return Some(DojoTy::None);
     }
     let mut elements = Vec::with_capacity(len);
     for _ in 0..len {
-        elements.push(DojoTy::deserialize(data, legacy)?);
+        elements.push(DojoTy::dojo_deserialize(data, legacy)?);
     }
     Some(DojoTy::Tuple(elements))
 }
@@ -260,25 +264,25 @@ fn felt_to_utf8_string(felt: Felt) -> Option<String> {
 }
 
 pub trait DojoTySerde: Sized {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self>;
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self>;
 }
 
 impl DojoTySerde for DojoMember {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().map(felt_to_utf8_string)??;
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
         let attrs_len = data.pop_front()?.to_usize()?;
         let mut attrs = Vec::with_capacity(attrs_len);
         for _ in 0..attrs_len {
             attrs.push(data.pop_front()?);
         }
-        let ty = DojoTy::deserialize(data, legacy)?;
+        let ty = DojoTy::dojo_deserialize(data, legacy)?;
         Some(DojoMember { name, attrs, ty })
     }
 }
 
 impl DojoTySerde for DojoStruct {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().map(felt_to_utf8_string)??;
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
         let attrs_len = data.pop_front()?.to_usize()?;
         let mut attrs = Vec::with_capacity(attrs_len);
         for _ in 0..attrs_len {
@@ -287,7 +291,7 @@ impl DojoTySerde for DojoStruct {
         let children_len = data.pop_front()?.to_usize()?;
         let mut children = Vec::with_capacity(children_len);
         for _ in 0..children_len {
-            children.push(DojoMember::deserialize(data, legacy)?);
+            children.push(DojoMember::dojo_deserialize(data, legacy)?);
         }
         Some(DojoStruct {
             name,
@@ -298,16 +302,16 @@ impl DojoTySerde for DojoStruct {
 }
 
 impl DojoTySerde for DojoVariant {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().map(felt_to_utf8_string)??;
-        let ty = DojoTy::deserialize(data, legacy)?;
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
+        let ty = DojoTy::dojo_deserialize(data, legacy)?;
         Some(DojoVariant { name, ty })
     }
 }
 
 impl DojoTySerde for DojoEnum {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().map(felt_to_utf8_string)??;
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
         let attrs_len = data.pop_front()?.to_usize()?;
         let mut attrs = Vec::with_capacity(attrs_len);
         for _ in 0..attrs_len {
@@ -317,7 +321,7 @@ impl DojoTySerde for DojoEnum {
         let mut variants = HashMap::with_capacity(variants_len);
         let legacy_mod: usize = (!legacy).into();
         for i in 0..variants_len {
-            let variant = DojoVariant::deserialize(data, legacy)?;
+            let variant = DojoVariant::dojo_deserialize(data, legacy)?;
             variants.insert((i + legacy_mod).into(), variant);
         }
         Some(DojoEnum {
@@ -329,7 +333,7 @@ impl DojoTySerde for DojoEnum {
 }
 
 impl DojoTySerde for DojoPrimitive {
-    fn deserialize(data: &mut VecDeque<Felt>, _legacy: bool) -> Option<Self> {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, _legacy: bool) -> Option<Self> {
         let kind = data.pop_front()?;
         if kind == primitive::BOOL_FELT {
             Some(DojoPrimitive::Bool)
@@ -372,16 +376,16 @@ impl DojoTySerde for DojoPrimitive {
 }
 
 impl DojoTySerde for DojoTy {
-    fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
         let kind = data.pop_front()?.to_u32()?;
         match kind {
-            0 => DojoPrimitive::deserialize(data, legacy).map(DojoTy::Primitive),
-            1 => DojoStruct::deserialize(data, legacy).map(DojoTy::Struct),
-            2 => DojoEnum::deserialize(data, legacy).map(DojoTy::Enum),
-            3 => deserialize_tuple(data, legacy),
-            4 => deserialize_array(data, legacy).map(DojoTy::Array),
+            0 => DojoPrimitive::dojo_deserialize(data, legacy).map(DojoTy::Primitive),
+            1 => DojoStruct::dojo_deserialize(data, legacy).map(DojoTy::Struct),
+            2 => DojoEnum::dojo_deserialize(data, legacy).map(DojoTy::Enum),
+            3 => dojo_deserialize_tuple(data, legacy),
+            4 => dojo_deserialize_array(data, legacy).map(DojoTy::Array),
             5 => Some(DojoTy::ByteArray),
-            6 => deserialize_fixed_array(data, legacy).map(DojoTy::FixedArray),
+            6 => dojo_deserialize_fixed_array(data, legacy).map(DojoTy::FixedArray),
             _ => None,
         }
     }
@@ -1039,7 +1043,7 @@ mod tests {
         println!("Testing struct deserialization and parsing");
         let felts = test_schema_felts();
         let mut data = VecDeque::from(felts);
-        let dojo_struct = DojoStruct::deserialize(&mut data, true).unwrap();
+        let dojo_struct = DojoStruct::dojo_deserialize(&mut data, true).unwrap();
 
         println!("{:?}", dojo_struct);
         let parsed = dojo_struct

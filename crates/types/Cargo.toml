@@ -10,5 +10,6 @@ starknet.workspace = true
 starknet-types-core.workspace = true
 num-traits.workspace = true
 cainome-cairo-serde.workspace = true
+serde.workspace = true
 
 [dev-dependencies]
