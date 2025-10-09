@@ -1,4 +1,4 @@
-use crate::parsed;
+use crate::parsed::{self, Parse};
 use crate::parsed::{Parsed, U256};
 use cainome_cairo_serde::{ByteArray, Bytes31};
 use num_traits::{ToPrimitive, Zero};
@@ -6,6 +6,7 @@ use starknet_types_core::felt::Felt;
 use std::collections::{HashMap, VecDeque};
 
 pub enum DojoTy {
+    None,
     Primitive(DojoPrimitive),
     Struct(DojoStruct),
     Enum(DojoEnum),
@@ -55,12 +56,6 @@ pub struct DojoMember {
     pub name: Felt,
     pub attrs: Vec<Felt>,
     pub ty: DojoTy,
-}
-
-/// For data the vec should be flipped for easier popping
-pub trait Parse {
-    type Parsed;
-    fn parse(&self, data: &mut VecDeque<Felt>) -> Option<Self::Parsed>;
 }
 
 fn parse_byte_array(data: &mut VecDeque<Felt>) -> Option<Parsed> {
@@ -185,6 +180,7 @@ impl Parse for DojoTy {
     type Parsed = Parsed;
     fn parse(&self, data: &mut VecDeque<Felt>) -> Option<Self::Parsed> {
         match self {
+            DojoTy::None => Some(Parsed::None),
             DojoTy::Primitive(primitive) => primitive.parse(data),
             DojoTy::Struct(dojo_struct) => dojo_struct.parse(data).map(Parsed::Struct),
             DojoTy::Enum(dojo_enum) => dojo_enum.parse(data).map(|e| Parsed::Enum(Box::new(e))),
@@ -209,16 +205,19 @@ fn deserialize_fixed_array(data: &mut VecDeque<Felt>, legacy: bool) -> Option<(B
     let size = data.pop_front()?.to_u32()?;
     Some((ty, size))
 }
-fn deserialize_tuple(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Vec<DojoTy>> {
+fn deserialize_tuple(data: &mut VecDeque<Felt>, legacy: bool) -> Option<DojoTy> {
     let len = data.pop_front()?.to_usize()?;
+    if len == 0 {
+        return Some(DojoTy::None);
+    }
     let mut elements = Vec::with_capacity(len);
     for _ in 0..len {
         elements.push(DojoTy::deserialize(data, legacy)?);
     }
-    Some(elements)
+    Some(DojoTy::Tuple(elements))
 }
 
-trait DojoTySerde: Sized {
+pub trait DojoTySerde: Sized {
     fn deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self>;
 }
 
@@ -335,7 +334,7 @@ impl DojoTySerde for DojoTy {
             0 => DojoPrimitive::deserialize(data, legacy).map(DojoTy::Primitive),
             1 => DojoStruct::deserialize(data, legacy).map(DojoTy::Struct),
             2 => DojoEnum::deserialize(data, legacy).map(DojoTy::Enum),
-            3 => deserialize_tuple(data, legacy).map(DojoTy::Tuple),
+            3 => deserialize_tuple(data, legacy),
             4 => deserialize_array(data, legacy).map(DojoTy::Array),
             5 => Some(DojoTy::ByteArray),
             6 => deserialize_fixed_array(data, legacy).map(DojoTy::FixedArray),

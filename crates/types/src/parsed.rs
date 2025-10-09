@@ -1,6 +1,9 @@
+use std::collections::VecDeque;
+
 use starknet_types_core::felt::Felt;
 
 pub enum Parsed {
+    None,
     Bool(bool),
     U8(u8),
     U16(u16),
@@ -46,4 +49,9 @@ pub struct Enum {
     pub attrs: Vec<String>,
     pub variant: String,
     pub value: Parsed,
+}
+
+pub trait Parse {
+    type Parsed;
+    fn parse(&self, data: &mut VecDeque<Felt>) -> Option<Self::Parsed>;
 }
