@@ -1,0 +1,18 @@
+[package]
+name = "dojo_introspect"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+starknet.workspace = true
+
+[dev-dependencies]
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[lib]
