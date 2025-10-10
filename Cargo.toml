@@ -7,7 +7,7 @@ members = ["crates/*"]
 edition = "2021"
 license = "Apache-2.0"
 license-file = "LICENSE"
-repository = "https://github.com/cartridge-gg/introspect"
+repository = "https://github.com/dojoengine/dojo-introspect"
 version = "0.1.0"
 
 [profile.performance]
