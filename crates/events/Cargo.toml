@@ -1,0 +1,14 @@
+[package]
+edition.workspace = true
+name = "dojo-introspect-events"
+version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+starknet-types-core.workspace = true
+starknet.workspace = true
+introspect-types.workspace = true
+introspect-value.workspace = true
+
+[dev-dependencies]

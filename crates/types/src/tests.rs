@@ -1,8 +1,6 @@
 use crate::make_dojo_table;
-
 use introspect_value::ToValue;
 use starknet_types_core::felt::Felt;
-use std::collections::VecDeque;
 
 fn test_schema_felts() -> Vec<Felt> {
     vec![
@@ -649,11 +647,9 @@ fn test_parse_struct() {
     println!("Testing struct deserialization and parsing");
     let table_data = test_schema_felts();
 
-    let struct_def = make_dojo_table("test", "test", table_data, true).unwrap();
-
-    println!("{:?}", struct_def);
-    let parsed = struct_def
-        .to_value(&mut VecDeque::from(test_record_felts()))
-        .unwrap();
+    let table_fields_def = make_dojo_table("test", "test", table_data, true).unwrap();
+    let mut record_data = test_record_felts().into_iter();
+    println!("{:?}", table_fields_def);
+    let parsed = table_fields_def.to_value(&mut record_data).unwrap();
     println!("{:?}", parsed);
 }
