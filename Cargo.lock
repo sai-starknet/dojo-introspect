@@ -942,8 +942,8 @@ dependencies = [
 
 [[package]]
 name = "introspect-types"
-version = "0.1.1"
-source = "git+https://github.com/cartridge-gg/introspect?tag=v0.1.1#3e0a8779799c7219da29e014693f7a641b2ed39c"
+version = "0.1.2"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next#d8c5c52e2b3fd847f5262fa7329f4c381a23ad2e"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-value",
@@ -954,8 +954,8 @@ dependencies = [
 
 [[package]]
 name = "introspect-value"
-version = "0.1.1"
-source = "git+https://github.com/cartridge-gg/introspect?tag=v0.1.1#3e0a8779799c7219da29e014693f7a641b2ed39c"
+version = "0.1.2"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next#d8c5c52e2b3fd847f5262fa7329f4c381a23ad2e"
 dependencies = [
  "cainome-cairo-serde",
  "serde",
