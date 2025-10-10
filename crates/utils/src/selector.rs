@@ -13,9 +13,13 @@ pub fn compute_bytearray_hash(value: &str) -> Felt {
 pub fn compute_selector_from_dojo_tag(tag: &str) -> Felt {
     let (namespace, name) =
         split_tag(tag).unwrap_or_else(|_| panic!("Invalid tag to split: {tag}"));
+    compute_selector_from_namespace_and_name(&namespace, &name)
+}
+
+pub fn compute_selector_from_namespace_and_name(namespace: &str, name: &str) -> Felt {
     poseidon_hash_many(&[
-        compute_bytearray_hash(&namespace),
-        compute_bytearray_hash(&name),
+        compute_bytearray_hash(namespace),
+        compute_bytearray_hash(name),
     ])
 }
 

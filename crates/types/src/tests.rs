@@ -1,5 +1,5 @@
-use super::DojoTypeDefSerde;
-use introspect_types::StructDef;
+use crate::make_dojo_table;
+
 use introspect_value::ToValue;
 use starknet_types_core::felt::Felt;
 use std::collections::VecDeque;
@@ -647,9 +647,9 @@ fn test_record_felts() -> Vec<Felt> {
 #[test]
 fn test_parse_struct() {
     println!("Testing struct deserialization and parsing");
-    let felts = test_schema_felts();
-    let mut data = VecDeque::from(felts);
-    let struct_def = StructDef::dojo_deserialize(&mut data, true).unwrap();
+    let table_data = test_schema_felts();
+
+    let struct_def = make_dojo_table("test", "test", table_data, true).unwrap();
 
     println!("{:?}", struct_def);
     let parsed = struct_def

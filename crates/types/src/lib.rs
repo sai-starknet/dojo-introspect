@@ -1,7 +1,11 @@
+use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
+use introspect_events::types::TableFieldsDef;
 use introspect_types::{
-    read_serialized_felt_array, EnumDef, FixedArrayDef, MemberDef, StructDef, TypeDef, VariantDef,
+    pop_primitive, read_serialized_felt_array, EnumDef, FieldDef, FixedArrayDef, MemberDef,
+    StructDef, TypeDef, VariantDef,
 };
 use num_traits::ToPrimitive;
+use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
 use std::{
     collections::{HashMap, VecDeque},
@@ -66,92 +70,8 @@ fn felt_to_utf8_string(felt: Felt) -> Option<String> {
     String::from_utf8(bytes[first..32].to_vec()).ok()
 }
 
-pub trait DojoTypeDefSerde: Sized {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self>;
-}
-
-pub fn parse_attrs(data: &mut VecDeque<Felt>) -> Option<Vec<String>> {
-    Some(
-        read_serialized_felt_array(data)?
-            .into_iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
-    )
-}
-
-impl DojoTypeDefSerde for MemberDef {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().and_then(felt_to_utf8_string)?;
-        let attrs = parse_attrs(data)?;
-        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
-        Some(MemberDef {
-            name,
-            attrs,
-            type_def,
-        })
-    }
-}
-
-impl DojoTypeDefSerde for FixedArrayDef {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        if !span_is_singleton(data) {
-            return None;
-        }
-        let type_def = Box::<TypeDef>::dojo_deserialize(data, legacy)?;
-        let size = data.pop_front()?.to_u32()?;
-        Some(FixedArrayDef { type_def, size })
-    }
-}
-
-impl DojoTypeDefSerde for StructDef {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().and_then(felt_to_utf8_string)?;
-        let attrs = parse_attrs(data)?;
-        let children_len = data.pop_front()?.to_usize()?;
-        let mut children = Vec::with_capacity(children_len);
-        for _ in 0..children_len {
-            children.push(MemberDef::dojo_deserialize(data, legacy)?);
-        }
-        Some(StructDef {
-            name,
-            attrs,
-            children,
-        })
-    }
-}
-
-impl DojoTypeDefSerde for VariantDef {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().and_then(felt_to_utf8_string)?;
-        let attrs = vec![];
-        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
-        Some(VariantDef {
-            name,
-            attrs,
-            type_def,
-        })
-    }
-}
-
-impl DojoTypeDefSerde for EnumDef {
-    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
-        let name = data.pop_front().and_then(felt_to_utf8_string)?;
-
-        let attrs = parse_attrs(data)?;
-        let legacy_mod: usize = (!legacy).into();
-
-        let variants_len = data.pop_front()?.to_usize()?;
-        let mut variants = HashMap::with_capacity(variants_len);
-        for i in 0..variants_len {
-            let variant = VariantDef::dojo_deserialize(data, legacy)?;
-            variants.insert((i + legacy_mod).into(), variant);
-        }
-        Some(EnumDef {
-            name,
-            attrs,
-            variants,
-        })
-    }
+fn pop_short_string(data: &mut VecDeque<Felt>) -> Option<String> {
+    data.pop_front().and_then(felt_to_utf8_string)
 }
 
 fn dojo_deserialize_primitive(data: &mut VecDeque<Felt>, _legacy: bool) -> Option<TypeDef> {
@@ -195,6 +115,130 @@ fn dojo_deserialize_primitive(data: &mut VecDeque<Felt>, _legacy: bool) -> Optio
     }
 }
 
+fn member_def_to_field_def(member: MemberDef) -> Option<FieldDef> {
+    Some(FieldDef {
+        selector: get_selector_from_name(&member.name).ok()?,
+        name: member.name,
+        attrs: member.attrs,
+        type_def: member.type_def,
+    })
+}
+
+pub trait DojoTypeDefSerde: Sized {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self>;
+}
+
+pub fn parse_attrs(data: &mut VecDeque<Felt>) -> Option<Vec<String>> {
+    Some(
+        read_serialized_felt_array(data)?
+            .into_iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>(),
+    )
+}
+
+impl DojoTypeDefSerde for Vec<MemberDef> {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        (0..pop_primitive(data)?)
+            .map(|_| MemberDef::dojo_deserialize(data, legacy))
+            .collect()
+    }
+}
+
+impl DojoTypeDefSerde for MemberDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
+        let attrs = parse_attrs(data)?;
+        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
+        Some(MemberDef {
+            name,
+            attrs,
+            type_def,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for FixedArrayDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        if !span_is_singleton(data) {
+            return None;
+        }
+        let type_def = Box::<TypeDef>::dojo_deserialize(data, legacy)?;
+        let size = data.pop_front()?.to_u32()?;
+        Some(FixedArrayDef { type_def, size })
+    }
+}
+
+impl DojoTypeDefSerde for StructDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
+        let attrs = parse_attrs(data)?;
+        let members = Vec::<MemberDef>::dojo_deserialize(data, legacy)?;
+        Some(StructDef {
+            name,
+            attrs,
+            members,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for VariantDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
+        let attrs = vec![];
+        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
+        Some(VariantDef {
+            name,
+            attrs,
+            type_def,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for EnumDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = data.pop_front().and_then(felt_to_utf8_string)?;
+
+        let attrs = parse_attrs(data)?;
+        let legacy_mod: usize = (!legacy).into();
+
+        let variants_len = data.pop_front()?.to_usize()?;
+        let mut variants = HashMap::with_capacity(variants_len);
+        for i in 0..variants_len {
+            let variant = VariantDef::dojo_deserialize(data, legacy)?;
+            variants.insert((i + legacy_mod).into(), variant);
+        }
+        Some(EnumDef {
+            name,
+            attrs,
+            variants,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for FieldDef {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        let name = pop_short_string(data)?;
+        let attrs = parse_attrs(data)?;
+        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
+        let selector = get_selector_from_name(&name).ok()?;
+        Some(FieldDef {
+            selector,
+            name,
+            attrs,
+            type_def,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for Vec<FieldDef> {
+    fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
+        (0..pop_primitive(data)?)
+            .map(|_| FieldDef::dojo_deserialize(data, legacy))
+            .collect()
+    }
+}
+
 impl DojoTypeDefSerde for TypeDef {
     fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
         let kind = data.pop_front()?.to_u32()?;
@@ -215,4 +259,28 @@ impl DojoTypeDefSerde for Box<TypeDef> {
     fn dojo_deserialize(data: &mut VecDeque<Felt>, legacy: bool) -> Option<Self> {
         TypeDef::dojo_deserialize(data, legacy).map(Box::new)
     }
+}
+
+pub fn make_dojo_table(
+    namespace: &str,
+    model_name: &str,
+    data: Vec<Felt>,
+    legacy: bool,
+) -> Option<TableFieldsDef> {
+    let mut data: VecDeque<Felt> = data.into();
+    let table_name = format!("{}-{}", namespace, model_name);
+    let schema = StructDef::dojo_deserialize(&mut data, legacy)?;
+    let id = compute_selector_from_namespace_and_name(namespace, model_name);
+    let fields = schema
+        .members
+        .into_iter()
+        .map(member_def_to_field_def)
+        .collect::<Option<Vec<_>>>()?
+        .into();
+    Some(TableFieldsDef {
+        id,
+        name: table_name,
+        attrs: schema.attrs,
+        fields,
+    })
 }

@@ -30,3 +30,5 @@ starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
 introspect-value = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
 introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
+introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
+dojo-introspect-utils = { path = "crates/utils" }

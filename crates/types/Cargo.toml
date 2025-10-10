@@ -13,5 +13,7 @@ cainome-cairo-serde.workspace = true
 serde.workspace = true
 introspect-value.workspace = true
 introspect-types.workspace = true
+introspect-events.workspace = true
+dojo-introspect-utils.workspace = true
 
 [dev-dependencies]
