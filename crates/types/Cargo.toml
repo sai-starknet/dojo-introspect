@@ -15,5 +15,6 @@ introspect-value.workspace = true
 introspect-types.workspace = true
 introspect-events.workspace = true
 dojo-introspect-utils.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]

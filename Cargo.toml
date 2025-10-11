@@ -33,3 +33,4 @@ introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch 
 introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
 dojo-introspect-utils = { path = "crates/utils" }
 dojo-introspect-types = { path = "crates/types" }
+thiserror = "2.0.17"

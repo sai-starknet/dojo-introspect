@@ -13,9 +13,13 @@ use std::future::Future;
 const SCHEMA_ENTRYPOINT_SELECTOR: Felt = selector!("schema");
 const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: Felt = selector!("use_legacy_storage");
 
+#[derive(Debug, thiserror::Error)]
 pub enum DojoSchemaFetcherError {
-    ProviderError(ProviderError),
+    #[error("provider error: {0}")]
+    ProviderError(#[from] ProviderError),
+    #[error("invalid legacy response")]
     InvalidLegacyResponse,
+    #[error("invalid schema")]
     InvalidSchema,
 }
 
