@@ -1,7 +1,7 @@
 use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
-use introspect_events::types::TableFieldsDef;
+use introspect_events::types::TableSchema;
 use introspect_types::{
-    pop_primitive, read_serialized_felt_array, EnumDef, FieldDef, FixedArrayDef, MemberDef,
+    pop_primitive, read_serialized_felt_array, ColumnDef, EnumDef, FieldDef, FixedArrayDef,
     StructDef, TypeDef, VariantDef,
 };
 use introspect_value::FeltIterator;
@@ -113,8 +113,8 @@ fn dojo_deserialize_primitive(data: &mut FeltIterator, _legacy: bool) -> Option<
     }
 }
 
-fn member_def_to_field_def(member: MemberDef) -> Option<FieldDef> {
-    Some(FieldDef {
+fn member_def_to_field_def(member: FieldDef) -> Option<ColumnDef> {
+    Some(ColumnDef {
         selector: get_selector_from_name(&member.name).ok()?,
         name: member.name,
         attrs: member.attrs,
@@ -135,20 +135,20 @@ pub fn parse_attrs(data: &mut FeltIterator) -> Option<Vec<String>> {
     )
 }
 
-impl DojoTypeDefSerde for Vec<MemberDef> {
+impl DojoTypeDefSerde for Vec<FieldDef> {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         (0..pop_primitive(data)?)
-            .map(|_| MemberDef::dojo_deserialize(data, legacy))
+            .map(|_| FieldDef::dojo_deserialize(data, legacy))
             .collect()
     }
 }
 
-impl DojoTypeDefSerde for MemberDef {
+impl DojoTypeDefSerde for FieldDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
         let attrs = parse_attrs(data)?;
         let type_def = TypeDef::dojo_deserialize(data, legacy)?;
-        Some(MemberDef {
+        Some(FieldDef {
             name,
             attrs,
             type_def,
@@ -171,11 +171,11 @@ impl DojoTypeDefSerde for StructDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
         let attrs = parse_attrs(data)?;
-        let members = Vec::<MemberDef>::dojo_deserialize(data, legacy)?;
+        let fields = Vec::<FieldDef>::dojo_deserialize(data, legacy)?;
         Some(StructDef {
             name,
             attrs,
-            members,
+            fields,
         })
     }
 }
@@ -214,13 +214,13 @@ impl DojoTypeDefSerde for EnumDef {
     }
 }
 
-impl DojoTypeDefSerde for FieldDef {
+impl DojoTypeDefSerde for ColumnDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = pop_short_string(data)?;
         let attrs = parse_attrs(data)?;
         let type_def = TypeDef::dojo_deserialize(data, legacy)?;
         let selector = get_selector_from_name(&name).ok()?;
-        Some(FieldDef {
+        Some(ColumnDef {
             selector,
             name,
             attrs,
@@ -229,10 +229,10 @@ impl DojoTypeDefSerde for FieldDef {
     }
 }
 
-impl DojoTypeDefSerde for Vec<FieldDef> {
+impl DojoTypeDefSerde for Vec<ColumnDef> {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         (0..pop_primitive(data)?)
-            .map(|_| FieldDef::dojo_deserialize(data, legacy))
+            .map(|_| ColumnDef::dojo_deserialize(data, legacy))
             .collect()
     }
 }
@@ -264,20 +264,20 @@ pub fn make_dojo_table(
     model_name: &str,
     data: Vec<Felt>,
     legacy: bool,
-) -> Option<TableFieldsDef> {
+) -> Option<TableSchema> {
     let mut data = data.into_iter();
     let table_name = format!("{}-{}", namespace, model_name);
     let schema = StructDef::dojo_deserialize(&mut data, legacy)?;
-    let id = compute_selector_from_namespace_and_name(namespace, model_name);
+    let table_id = compute_selector_from_namespace_and_name(namespace, model_name);
     let fields = schema
-        .members
+        .fields
         .into_iter()
         .map(member_def_to_field_def)
         .collect::<Option<Vec<_>>>()?
         .into();
-    Some(TableFieldsDef {
-        id,
-        name: table_name,
+    Some(TableSchema {
+        table_id,
+        table_name,
         attrs: schema.attrs,
         fields,
     })

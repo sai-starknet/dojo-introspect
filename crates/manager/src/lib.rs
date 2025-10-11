@@ -1,5 +1,5 @@
 use dojo_introspect_utils::selector::compute_selector_from_dojo_tag;
-use introspect_types::FieldDef;
+use introspect_types::ColumnDef;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -13,12 +13,12 @@ pub struct SimpleManager<Store> {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Table {
     pub name: String,
-    pub fields: HashMap<Felt, FieldDef>,
+    pub fields: HashMap<Felt, ColumnDef>,
     pub record_order: Vec<Felt>,
 }
 
 impl Table {
-    fn get_schema(&self) -> Vec<FieldDef> {
+    fn get_schema(&self) -> Vec<ColumnDef> {
         self.record_order
             .iter()
             .filter_map(|selector| self.fields.get(selector).cloned())
@@ -122,7 +122,7 @@ impl<Store> IntrospectManager for SimpleManager<Store>
 where
     Store: StoreTrait<Table = Table>,
 {
-    type Field = FieldDef;
+    type Field = ColumnDef;
     type Table = Table;
     fn register_table(&mut self, id: Felt, name: &str, fields: Vec<Self::Field>) -> bool {
         if self.tables.contains_key(&id) {
