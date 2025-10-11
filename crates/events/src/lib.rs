@@ -119,8 +119,9 @@ pub struct EventRegistered {
     pub address: Felt,
 }
 
-impl EventRegistered {
-    pub fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
+impl DojoEvent for EventRegistered {
+    const SELECTOR: Felt = selector!("EventRegistered");
+    fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.iter();
         let mut data = data.into_iter();
         let name = decode_byte_array_to_string(&mut keys)?;
