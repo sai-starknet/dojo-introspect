@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use dojo_introspect_types::DojoTypeDefSerde;
 use introspect_types::StructDef;
 use num_traits::One;
@@ -10,6 +8,7 @@ use starknet::{
     providers::{Provider, ProviderError},
 };
 use starknet_types_core::felt::Felt;
+use std::future::Future;
 
 const SCHEMA_ENTRYPOINT_SELECTOR: Felt = selector!("schema");
 const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: Felt = selector!("use_legacy_storage");

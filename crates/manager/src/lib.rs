@@ -1,12 +1,14 @@
 use dojo_introspect_utils::selector::compute_selector_from_dojo_tag;
 use introspect_types::ColumnDef;
-pub use model::{DojoSchemaFetcher, DojoSchemaFetcherError};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+
 pub mod model;
+
+pub use model::{DojoSchemaFetcher, DojoSchemaFetcherError};
 
 pub struct SimpleManager<Store> {
     pub tables: HashMap<Felt, Table>,

@@ -6,15 +6,13 @@ version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-starknet.workspace = true
-starknet-types-core.workspace = true
-num-traits.workspace = true
-cainome-cairo-serde.workspace = true
 dojo-introspect-types = { path = "../types" }
 dojo-introspect-utils = { path = "../utils" }
 introspect-types.workspace = true
-serde.workspace = true
+num-traits.workspace = true
 serde_json = "1.0.145"
-futures = "0.3.31"
+serde.workspace = true
+starknet-types-core.workspace = true
+starknet.workspace = true
 
 [dev-dependencies]
