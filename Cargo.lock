@@ -385,20 +385,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dojo-introspect-manager"
-version = "0.1.0"
-dependencies = [
- "dojo-introspect-types",
- "dojo-introspect-utils",
- "introspect-types",
- "num-traits",
- "serde",
- "serde_json",
- "starknet",
- "starknet-types-core",
-]
-
-[[package]]
 name = "dojo-introspect-types"
 version = "0.1.0"
 dependencies = [

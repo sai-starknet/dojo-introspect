@@ -32,3 +32,4 @@ introspect-value = { git = "https://github.com/cartridge-gg/introspect", branch 
 introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
 introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "next" }
 dojo-introspect-utils = { path = "crates/utils" }
+dojo-introspect-types = { path = "crates/types" }

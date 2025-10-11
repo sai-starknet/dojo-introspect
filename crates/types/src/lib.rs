@@ -9,6 +9,9 @@ use num_traits::ToPrimitive;
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
+pub mod contract;
+
+pub use contract::{DojoSchemaFetcher, DojoSchemaFetcherError};
 #[cfg(test)]
 mod tests;
 

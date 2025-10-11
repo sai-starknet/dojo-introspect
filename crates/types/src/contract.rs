@@ -1,4 +1,4 @@
-use dojo_introspect_types::DojoTypeDefSerde;
+use crate::DojoTypeDefSerde;
 use introspect_types::StructDef;
 use num_traits::One;
 use starknet::core::types::StarknetError;
