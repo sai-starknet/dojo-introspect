@@ -4,6 +4,13 @@ use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
 use std::slice::Iter;
 
+macro_rules! impl_dojo_event_name {
+    ($name:literal) => {
+        const NAME: &'static str = $name;
+        const SELECTOR: Felt = selector!($name);
+    };
+}
+
 pub enum DojoEvents {
     ModelRegistered(ModelRegistered),
     ModelWithSchemaRegistered(ModelWithSchemaRegistered),
@@ -22,6 +29,7 @@ fn decode_byte_array_to_string(data: &mut Iter<Felt>) -> Option<String> {
 }
 
 pub trait DojoEvent {
+    const NAME: &'static str;
     const SELECTOR: Felt;
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self>
     where
@@ -36,7 +44,7 @@ pub struct ModelRegistered {
 }
 
 impl DojoEvent for ModelRegistered {
-    const SELECTOR: Felt = selector!("ModelRegistered");
+    impl_dojo_event_name!("ModelRegistered");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self>
     where
         Self: Sized,
@@ -66,7 +74,7 @@ pub struct ModelWithSchemaRegistered {
 }
 
 impl DojoEvent for ModelWithSchemaRegistered {
-    const SELECTOR: Felt = selector!("ModelWithSchemaRegistered");
+    impl_dojo_event_name!("ModelWithSchemaRegistered");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.iter();
         let mut data = data.into_iter();
@@ -92,7 +100,7 @@ pub struct ModelUpgraded {
 }
 
 impl DojoEvent for ModelUpgraded {
-    const SELECTOR: Felt = selector!("ModelUpgraded");
+    impl_dojo_event_name!("ModelUpgraded");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
@@ -120,7 +128,7 @@ pub struct EventRegistered {
 }
 
 impl DojoEvent for EventRegistered {
-    const SELECTOR: Felt = selector!("EventRegistered");
+    impl_dojo_event_name!("EventRegistered");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.iter();
         let mut data = data.into_iter();
@@ -148,7 +156,7 @@ pub struct EventUpgraded {
 }
 
 impl DojoEvent for EventUpgraded {
-    const SELECTOR: Felt = selector!("EventUpgraded");
+    impl_dojo_event_name!("EventUpgraded");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
@@ -176,7 +184,7 @@ pub struct StoreSetRecord {
 }
 
 impl DojoEvent for StoreSetRecord {
-    const SELECTOR: Felt = selector!("StoreSetRecord");
+    impl_dojo_event_name!("StoreSetRecord");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
@@ -203,7 +211,7 @@ pub struct StoreUpdateRecord {
 }
 
 impl DojoEvent for StoreUpdateRecord {
-    const SELECTOR: Felt = selector!("StoreUpdateRecord");
+    impl_dojo_event_name!("StoreUpdateRecord");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
@@ -229,7 +237,7 @@ pub struct StoreUpdateMember {
 }
 
 impl DojoEvent for StoreUpdateMember {
-    const SELECTOR: Felt = selector!("StoreUpdateMember");
+    impl_dojo_event_name!("StoreUpdateMember");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
@@ -255,7 +263,7 @@ pub struct StoreDelRecord {
 }
 
 impl DojoEvent for StoreDelRecord {
-    const SELECTOR: Felt = selector!("StoreDelRecord");
+    impl_dojo_event_name!("StoreDelRecord");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let selector = keys.next()?;
@@ -278,7 +286,7 @@ pub struct EventEmitted {
 }
 
 impl DojoEvent for EventEmitted {
-    const SELECTOR: Felt = selector!("EventEmitted");
+    impl_dojo_event_name!("EventEmitted");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
         let mut keys = keys.into_iter();
         let mut data = data.into_iter();
