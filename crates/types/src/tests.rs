@@ -1,8 +1,11 @@
-use crate::make_dojo_table;
+use crate::{make_dojo_table, DojoTypeDefSerde};
+use introspect_types::{EnumDef, FieldDef, StructDef, TypeDef, VariantDef};
 use introspect_value::ToValue;
 use starknet_types_core::felt::Felt;
+use std::collections::HashMap;
 
 fn test_schema_felts() -> Vec<Felt> {
+    // TODO: @bengineer42 add the reference + the keys.
     vec![
         "0x41747461636b576974684e616d65",
         "0x0",
@@ -652,4 +655,559 @@ fn test_parse_struct() {
     println!("{:?}", table_fields_def);
     let parsed = table_fields_def.to_value(&mut record_data).unwrap();
     println!("{:?}", parsed);
+}
+
+#[test]
+fn test_non_legacy_with_enum_schema() {
+    // Taken from `Moved` model in Dojo example
+    // <https://github.com/dojoengine/dojo/blob/b3e5fb946953a247cdf3864ffcaeb50c4761dedd/examples/spawn-and-move/src/actions.cairo#L51>.
+    let schema: Vec<Felt> = vec![
+        "0x4d6f766564",
+        "0x0",
+        "0x2",
+        "0x706c61796572",
+        "0x1",
+        "0x6b6579",
+        "0x0",
+        "0x436f6e747261637441646472657373",
+        "0x646972656374696f6e",
+        "0x0",
+        "0x2",
+        "0x446972656374696f6e",
+        "0x0",
+        "0x5",
+        "0x4e6f6e65",
+        "0x3",
+        "0x0",
+        "0x4c656674",
+        "0x3",
+        "0x0",
+        "0x5269676874",
+        "0x3",
+        "0x0",
+        "0x5570",
+        "0x3",
+        "0x0",
+        "0x446f776e",
+        "0x3",
+        "0x0",
+    ]
+    .into_iter()
+    .map(Felt::from_hex_unchecked)
+    .collect();
+
+    let is_legacy = false;
+    let struct_def = StructDef::dojo_deserialize(&mut schema.into_iter(), is_legacy).unwrap();
+
+    assert_eq!(struct_def.name, "Moved");
+    assert!(struct_def.attrs.is_empty());
+    assert_eq!(struct_def.fields.len(), 2);
+    assert_eq!(struct_def.fields[0].name, "player");
+    assert_eq!(struct_def.fields[0].attrs, vec!["key".to_string()]);
+    assert_eq!(struct_def.fields[0].type_def, TypeDef::ContractAddress);
+    assert_eq!(struct_def.fields[1].name, "direction");
+    assert!(struct_def.fields[1].attrs.is_empty());
+    assert_eq!(
+        struct_def.fields[1].type_def,
+        TypeDef::Enum(EnumDef {
+            name: String::from("Direction"),
+            attrs: vec![],
+            variants: HashMap::from([
+                (
+                    Felt::from_hex_unchecked("0x1"),
+                    VariantDef {
+                        name: String::from("None"),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x2"),
+                    VariantDef {
+                        name: String::from("Left"),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x3"),
+                    VariantDef {
+                        name: String::from("Right"),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x4"),
+                    VariantDef {
+                        name: String::from("Up"),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x5"),
+                    VariantDef {
+                        name: String::from("Down"),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+            ])
+        })
+    );
+}
+
+#[test]
+fn test_non_legacy_with_enum_and_enum_array_schema() {
+    // Taken from `Enemy` model in Dojo example
+    // <https://github.com/dojoengine/dojo/blob/b3e5fb946953a247cdf3864ffcaeb50c4761dedd/examples/spawn-and-move/src/models.cairo#L41>.
+    let schema: Vec<Felt> = vec![
+        "0x456e656d79",
+        "0x0",
+        "0x2",
+        "0x656e656d795f74797065",
+        "0x1",
+        "0x6b6579",
+        "0x2",
+        "0x456e656d7954797065",
+        "0x0",
+        "0x5",
+        "0x476f626c696e",
+        "0x3",
+        "0x0",
+        "0x4f7263",
+        "0x3",
+        "0x0",
+        "0x54726f6c6c",
+        "0x3",
+        "0x0",
+        "0x447261676f6e",
+        "0x3",
+        "0x0",
+        "0x4769616e74",
+        "0x3",
+        "0x0",
+        "0x70726f70657274696573",
+        "0x0",
+        "0x4",
+        "0x1",
+        "0x2",
+        "0x456e656d7950726f7065727479",
+        "0x0",
+        "0x4",
+        "0x4865616c7468426f6f73746572",
+        "0x0",
+        "0x7538",
+        "0x5370656369616c41747461636b",
+        "0x0",
+        "0x7538",
+        "0x536869656c64",
+        "0x2",
+        "0x4f7074696f6e3c543e",
+        "0x0",
+        "0x2",
+        "0x536f6d65285429",
+        "0x0",
+        "0x7538",
+        "0x4e6f6e65",
+        "0x3",
+        "0x0",
+        "0x5370656564426f6f73746572",
+        "0x2",
+        "0x456e656d795370656564",
+        "0x0",
+        "0x3",
+        "0x536c6f77",
+        "0x3",
+        "0x0",
+        "0x4d656469756d",
+        "0x3",
+        "0x0",
+        "0x48696768",
+        "0x3",
+        "0x0",
+    ]
+    .into_iter()
+    .map(Felt::from_hex_unchecked)
+    .collect();
+
+    let is_legacy = false;
+    let struct_def = StructDef::dojo_deserialize(&mut schema.into_iter(), is_legacy).unwrap();
+
+    assert_eq!(struct_def.name, "Enemy");
+    assert!(struct_def.attrs.is_empty());
+    assert_eq!(struct_def.fields.len(), 2);
+    assert_eq!(struct_def.fields[0].name, "enemy_type");
+    assert_eq!(struct_def.fields[0].attrs, vec!["key".to_string()]);
+    assert_eq!(
+        struct_def.fields[0].type_def,
+        TypeDef::Enum(EnumDef {
+            name: "EnemyType".to_string(),
+            attrs: vec![],
+            variants: HashMap::from([
+                (
+                    Felt::from_hex_unchecked("0x1"),
+                    VariantDef {
+                        name: "Orc".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x2"),
+                    VariantDef {
+                        name: "Troll".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x3"),
+                    VariantDef {
+                        name: "Dragon".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x4"),
+                    VariantDef {
+                        name: "Giant".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x0"),
+                    VariantDef {
+                        name: "Goblin".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+            ])
+        })
+    );
+    assert_eq!(struct_def.fields[1].name, "properties");
+    assert!(struct_def.fields[1].attrs.is_empty());
+    assert_eq!(
+        struct_def.fields[1].type_def,
+        TypeDef::Array(Box::new(TypeDef::Enum(EnumDef {
+            name: "EnemyProperty".to_string(),
+            attrs: vec![],
+            variants: HashMap::from([
+                (
+                    Felt::from_hex_unchecked("0x1"),
+                    VariantDef {
+                        name: "HealthBooster".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::U8
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x2"),
+                    VariantDef {
+                        name: "SpecialAttack".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::U8
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x3"),
+                    VariantDef {
+                        name: "Shield".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::Enum(EnumDef {
+                            name: "Option<T>".to_string(),
+                            attrs: vec![],
+                            variants: HashMap::from([
+                                (
+                                    Felt::from_hex_unchecked("0x1"),
+                                    VariantDef {
+                                        name: "Some(T)".to_string(),
+                                        attrs: vec![],
+                                        type_def: TypeDef::U8
+                                    }
+                                ),
+                                (
+                                    Felt::from_hex_unchecked("0x2"),
+                                    VariantDef {
+                                        name: "None".to_string(),
+                                        attrs: vec![],
+                                        type_def: TypeDef::None
+                                    }
+                                ),
+                            ])
+                        })
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x4"),
+                    VariantDef {
+                        name: "SpeedBooster".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::Enum(EnumDef {
+                            name: "EnemySpeed".to_string(),
+                            attrs: vec![],
+                            variants: HashMap::from([
+                                (
+                                    Felt::from_hex_unchecked("0x1"),
+                                    VariantDef {
+                                        name: "Slow".to_string(),
+                                        attrs: vec![],
+                                        type_def: TypeDef::None
+                                    }
+                                ),
+                                (
+                                    Felt::from_hex_unchecked("0x2"),
+                                    VariantDef {
+                                        name: "Medium".to_string(),
+                                        attrs: vec![],
+                                        type_def: TypeDef::None
+                                    }
+                                ),
+                                (
+                                    Felt::from_hex_unchecked("0x3"),
+                                    VariantDef {
+                                        name: "High".to_string(),
+                                        attrs: vec![],
+                                        type_def: TypeDef::None
+                                    }
+                                ),
+                            ])
+                        })
+                    }
+                ),
+            ])
+        })))
+    );
+}
+
+#[test]
+fn test_legacy_with_enum_schema() {
+    // Taken from `VintageEnemy` model in Dojo example
+    // <https://github.com/dojoengine/dojo/blob/b3e5fb946953a247cdf3864ffcaeb50c4761dedd/examples/spawn-and-move/src/models.cairo#L59>.
+    let schema: Vec<Felt> = vec![
+        "0x56696e74616765456e656d79",
+        "0x0",
+        "0x4",
+        "0x656e656d795f74797065",
+        "0x1",
+        "0x6b6579",
+        "0x2",
+        "0x456e656d7954797065",
+        "0x0",
+        "0x5",
+        "0x476f626c696e",
+        "0x3",
+        "0x0",
+        "0x4f7263",
+        "0x3",
+        "0x0",
+        "0x54726f6c6c",
+        "0x3",
+        "0x0",
+        "0x447261676f6e",
+        "0x3",
+        "0x0",
+        "0x4769616e74",
+        "0x3",
+        "0x0",
+        "0x636861726163746572697374696373",
+        "0x0",
+        "0x1",
+        "0x56696e74616765456e656d79436861726163746572697374696373",
+        "0x0",
+        "0x3",
+        "0x61747461636b",
+        "0x0",
+        "0x0",
+        "0x7538",
+        "0x646566656e7365",
+        "0x0",
+        "0x0",
+        "0x7538",
+        "0x736869656c64",
+        "0x0",
+        "0x2",
+        "0x4f7074696f6e3c543e",
+        "0x0",
+        "0x2",
+        "0x536f6d65285429",
+        "0x0",
+        "0x7538",
+        "0x4e6f6e65",
+        "0x3",
+        "0x0",
+        "0x7370656564",
+        "0x0",
+        "0x2",
+        "0x456e656d795370656564",
+        "0x0",
+        "0x3",
+        "0x536c6f77",
+        "0x3",
+        "0x0",
+        "0x4d656469756d",
+        "0x3",
+        "0x0",
+        "0x48696768",
+        "0x3",
+        "0x0",
+        "0x69735f736574",
+        "0x0",
+        "0x0",
+        "0x626f6f6c",
+    ]
+    .into_iter()
+    .map(Felt::from_hex_unchecked)
+    .collect();
+
+    let is_legacy = true;
+    let struct_def = StructDef::dojo_deserialize(&mut schema.into_iter(), is_legacy).unwrap();
+
+    assert_eq!(struct_def.name, "VintageEnemy");
+    assert!(struct_def.attrs.is_empty());
+    assert_eq!(struct_def.fields.len(), 4);
+
+    assert_eq!(struct_def.fields[0].name, "enemy_type");
+    assert_eq!(struct_def.fields[0].attrs, vec!["key".to_string()]);
+    assert_eq!(
+        struct_def.fields[0].type_def,
+        TypeDef::Enum(EnumDef {
+            name: "EnemyType".to_string(),
+            attrs: vec![],
+            variants: HashMap::from([
+                (
+                    Felt::from_hex_unchecked("0x0"),
+                    VariantDef {
+                        name: "Goblin".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x1"),
+                    VariantDef {
+                        name: "Orc".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x2"),
+                    VariantDef {
+                        name: "Troll".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x3"),
+                    VariantDef {
+                        name: "Dragon".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x4"),
+                    VariantDef {
+                        name: "Giant".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+            ])
+        })
+    );
+
+    assert_eq!(struct_def.fields[1].name, "characteristics");
+    assert!(struct_def.fields[1].attrs.is_empty());
+    assert_eq!(
+        struct_def.fields[1].type_def,
+        TypeDef::Struct(StructDef {
+            name: "VintageEnemyCharacteristics".to_string(),
+            attrs: vec![],
+            fields: vec![
+                FieldDef {
+                    name: "attack".to_string(),
+                    attrs: vec![],
+                    type_def: TypeDef::U8
+                },
+                FieldDef {
+                    name: "defense".to_string(),
+                    attrs: vec![],
+                    type_def: TypeDef::U8
+                },
+                FieldDef {
+                    name: "shield".to_string(),
+                    attrs: vec![],
+                    type_def: TypeDef::Enum(EnumDef {
+                        name: "Option<T>".to_string(),
+                        attrs: vec![],
+                        variants: HashMap::from([
+                            (
+                                Felt::from_hex_unchecked("0x0"),
+                                VariantDef {
+                                    name: "Some(T)".to_string(),
+                                    attrs: vec![],
+                                    type_def: TypeDef::U8
+                                }
+                            ),
+                            (
+                                Felt::from_hex_unchecked("0x1"),
+                                VariantDef {
+                                    name: "None".to_string(),
+                                    attrs: vec![],
+                                    type_def: TypeDef::None
+                                }
+                            ),
+                        ])
+                    })
+                },
+            ]
+        })
+    );
+
+    assert_eq!(struct_def.fields[2].name, "speed");
+    assert!(struct_def.fields[2].attrs.is_empty());
+    assert_eq!(
+        struct_def.fields[2].type_def,
+        TypeDef::Enum(EnumDef {
+            name: "EnemySpeed".to_string(),
+            attrs: vec![],
+            variants: HashMap::from([
+                (
+                    Felt::from_hex_unchecked("0x0"),
+                    VariantDef {
+                        name: "Slow".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x1"),
+                    VariantDef {
+                        name: "Medium".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+                (
+                    Felt::from_hex_unchecked("0x2"),
+                    VariantDef {
+                        name: "High".to_string(),
+                        attrs: vec![],
+                        type_def: TypeDef::None
+                    }
+                ),
+            ])
+        })
+    );
+
+    assert_eq!(struct_def.fields[3].name, "is_set");
+    assert!(struct_def.fields[3].attrs.is_empty());
+    assert_eq!(struct_def.fields[3].type_def, TypeDef::Bool);
 }

@@ -78,7 +78,9 @@ where
             Ok(felts) => felts,
             Err(err) => return Err(DojoSchemaFetcherError::ProviderError(err)),
         };
-        StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
-            .ok_or(DojoSchemaFetcherError::InvalidSchema)
+        let struct_def = StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
+            .ok_or(DojoSchemaFetcherError::InvalidSchema);
+
+        struct_def
     }
 }

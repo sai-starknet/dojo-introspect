@@ -1,3 +1,17 @@
+//! Types matching the Dojo introspect implementation.
+//!
+//! An important note is about how Dojo handles introspect for legacy and non-legacy models.
+//!
+//! The legacy models use serde to serialize the keys AND all the value fields. Since in Dojo
+//! the introspect wasn't decoupled enough from the storage system, the tech debt is having
+//! the enums first variant stored as 0. Which can cause issues when reading uninitialized storage.
+//!
+//! To solve that, the `DojoStore` introduced recently in Dojo offsets the first variant of the
+//! enums by 1.
+//! However, since the keys are never stored, they are still using the serde logic (where the first variant is 0).
+//!
+//! For this reason, it is important while deserializing a typedef or a value to correctly map the legacy flag.
+
 use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
 use introspect_events::types::TableSchema;
 use introspect_types::{
@@ -6,7 +20,7 @@ use introspect_types::{
 };
 use introspect_value::FeltIterator;
 use num_traits::ToPrimitive;
-use starknet::core::utils::get_selector_from_name;
+use starknet::core::utils::{get_selector_from_name, parse_cairo_short_string};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 pub mod contract;
@@ -133,7 +147,7 @@ pub fn parse_attrs(data: &mut FeltIterator) -> Option<Vec<String>> {
     Some(
         read_serialized_felt_array(data)?
             .into_iter()
-            .map(|v| v.to_string())
+            .map(|v| parse_cairo_short_string(&v).expect("Invalid cairo short string for attr"))
             .collect::<Vec<String>>(),
     )
 }
@@ -150,7 +164,8 @@ impl DojoTypeDefSerde for FieldDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
         let attrs = parse_attrs(data)?;
-        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
+        let is_key = attrs.iter().any(|attr| attr == "key");
+        let type_def = TypeDef::dojo_deserialize(data, legacy || is_key)?;
         Some(FieldDef {
             name,
             attrs,
@@ -174,7 +189,8 @@ impl DojoTypeDefSerde for StructDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
         let attrs = parse_attrs(data)?;
-        let fields = Vec::<FieldDef>::dojo_deserialize(data, legacy)?;
+        let is_key = attrs.iter().any(|attr| attr == "key");
+        let fields = Vec::<FieldDef>::dojo_deserialize(data, legacy || is_key)?;
         Some(StructDef {
             name,
             attrs,
@@ -201,6 +217,9 @@ impl DojoTypeDefSerde for EnumDef {
         let name = data.next().and_then(felt_to_utf8_string)?;
 
         let attrs = parse_attrs(data)?;
+        let is_key = attrs.iter().any(|attr| attr == "key");
+        let legacy = legacy || is_key;
+
         let legacy_mod: usize = (!legacy).into();
 
         let variants_len = data.next()?.to_usize()?;
