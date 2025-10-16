@@ -58,14 +58,16 @@ async fn is_legacy(
     }
 }
 
-pub trait DojoSchemaFetcher<Err> {
-    fn schema(&self, contract_address: Felt) -> impl Future<Output = Result<StructDef, Err>>;
+pub trait DojoSchemaFetcher {
+    type Err;
+    fn schema(&self, contract_address: Felt) -> impl Future<Output = Result<StructDef, Self::Err>>;
 }
 
-impl<P> DojoSchemaFetcher<DojoSchemaFetcherError> for P
+impl<P> DojoSchemaFetcher for P
 where
     P: Provider,
 {
+    type Err = DojoSchemaFetcherError;
     async fn schema(&self, contract_address: Felt) -> Result<StructDef, DojoSchemaFetcherError> {
         let schema_call = empty_call(self, contract_address, SCHEMA_ENTRYPOINT_SELECTOR).await;
         let legacy_call = is_legacy(self, contract_address).await;
