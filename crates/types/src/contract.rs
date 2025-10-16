@@ -1,4 +1,5 @@
 use crate::DojoTypeDefSerde;
+use anyhow::{anyhow, Context, Result};
 use introspect_types::StructDef;
 use num_traits::One;
 use starknet::core::types::StarknetError;
@@ -59,26 +60,22 @@ async fn is_legacy(
 }
 
 pub trait DojoSchemaFetcher {
-    type Err;
-    fn schema(&self, contract_address: Felt) -> impl Future<Output = Result<StructDef, Self::Err>>;
+    fn schema(&self, contract_address: Felt) -> impl Future<Output = Result<StructDef>>;
 }
 
 impl<P> DojoSchemaFetcher for P
 where
     P: Provider,
 {
-    type Err = DojoSchemaFetcherError;
-    async fn schema(&self, contract_address: Felt) -> Result<StructDef, DojoSchemaFetcherError> {
+    async fn schema(&self, contract_address: Felt) -> Result<StructDef> {
         let schema_call = empty_call(self, contract_address, SCHEMA_ENTRYPOINT_SELECTOR).await;
         let legacy_call = is_legacy(self, contract_address).await;
         let legacy = legacy_call?;
         let schema_call_result = match schema_call {
             Ok(felts) => felts,
-            Err(err) => return Err(DojoSchemaFetcherError::ProviderError(err)),
+            Err(err) => return Err(anyhow!(DojoSchemaFetcherError::ProviderError(err))),
         };
-        let struct_def = StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
-            .ok_or(DojoSchemaFetcherError::InvalidSchema);
-
-        struct_def
+        StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
+            .context("failed to deserialize schema")
     }
 }
