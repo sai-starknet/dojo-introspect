@@ -374,6 +374,7 @@ name = "dojo-introspect-types"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "cainome-cairo-serde",
  "dojo-introspect-utils",
  "introspect-events",

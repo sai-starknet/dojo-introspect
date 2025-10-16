@@ -17,4 +17,5 @@ introspect-events.workspace = true
 dojo-introspect-utils.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
+async-trait.workspace = true
 [dev-dependencies]

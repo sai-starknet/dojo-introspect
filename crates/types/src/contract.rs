@@ -1,5 +1,6 @@
 use crate::DojoTypeDefSerde;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use introspect_types::StructDef;
 use num_traits::One;
 use starknet::core::types::StarknetError;
@@ -9,7 +10,6 @@ use starknet::{
     providers::{Provider, ProviderError},
 };
 use starknet_types_core::felt::Felt;
-use std::future::Future;
 
 const SCHEMA_ENTRYPOINT_SELECTOR: Felt = selector!("schema");
 const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: Felt = selector!("use_legacy_storage");
@@ -59,13 +59,15 @@ async fn is_legacy(
     }
 }
 
+#[async_trait]
 pub trait DojoSchemaFetcher {
-    fn schema(&self, contract_address: Felt) -> impl Future<Output = Result<StructDef>>;
+    async fn schema(&self, contract_address: Felt) -> Result<StructDef>;
 }
 
+#[async_trait]
 impl<P> DojoSchemaFetcher for P
 where
-    P: Provider,
+    P: Provider + Send + Sync,
 {
     async fn schema(&self, contract_address: Felt) -> Result<StructDef> {
         let schema_call = empty_call(self, contract_address, SCHEMA_ENTRYPOINT_SELECTOR).await;
