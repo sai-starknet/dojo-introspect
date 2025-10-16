@@ -940,7 +940,7 @@ dependencies = [
 [[package]]
 name = "introspect-events"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next#c41d07efacc7669361c566f65806054d3bfe45ec"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-types",
@@ -952,7 +952,7 @@ dependencies = [
 [[package]]
 name = "introspect-types"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next#c41d07efacc7669361c566f65806054d3bfe45ec"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-value",
@@ -965,7 +965,7 @@ dependencies = [
 [[package]]
 name = "introspect-value"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next#c41d07efacc7669361c566f65806054d3bfe45ec"
 dependencies = [
  "cainome-cairo-serde",
  "convert_case",
