@@ -171,9 +171,9 @@ dependencies = [
 
 [[package]]
 name = "cfg-if"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fd1289c04a9ea8cb22300a459a72a385d7c73d3259e2ed7dcb2af674838cfa9"
+checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "cfg_aliases"
@@ -938,7 +938,7 @@ dependencies = [
 [[package]]
 name = "introspect-events"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#24b6a3f71a39d668a7153d6b4e693b50ba3cfb97"
+source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-types",
@@ -950,7 +950,7 @@ dependencies = [
 [[package]]
 name = "introspect-types"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#24b6a3f71a39d668a7153d6b4e693b50ba3cfb97"
+source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-value",
@@ -963,7 +963,7 @@ dependencies = [
 [[package]]
 name = "introspect-value"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=main#24b6a3f71a39d668a7153d6b4e693b50ba3cfb97"
+source = "git+https://github.com/cartridge-gg/introspect?branch=main#5025c1e8d465bf1282cb1a8cce914f935f912989"
 dependencies = [
  "cainome-cairo-serde",
  "convert_case",
