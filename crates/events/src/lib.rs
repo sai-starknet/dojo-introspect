@@ -36,6 +36,7 @@ pub trait DojoEvent {
         Self: Sized;
 }
 
+#[derive(Debug)]
 pub struct ModelRegistered {
     pub name: String,
     pub namespace: String,
@@ -67,6 +68,7 @@ impl DojoEvent for ModelRegistered {
     }
 }
 
+#[derive(Debug)]
 pub struct ModelWithSchemaRegistered {
     pub name: String,
     pub namespace: String,
@@ -92,6 +94,7 @@ impl DojoEvent for ModelWithSchemaRegistered {
     }
 }
 
+#[derive(Debug)]
 pub struct ModelUpgraded {
     pub selector: Felt,
     pub class_hash: Felt,
@@ -120,6 +123,7 @@ impl DojoEvent for ModelUpgraded {
     }
 }
 
+#[derive(Debug)]
 pub struct EventRegistered {
     pub name: String,
     pub namespace: String,
@@ -148,6 +152,7 @@ impl DojoEvent for EventRegistered {
     }
 }
 
+#[derive(Debug)]
 pub struct EventUpgraded {
     pub selector: Felt,
     pub class_hash: Felt,
@@ -176,6 +181,7 @@ impl DojoEvent for EventUpgraded {
     }
 }
 
+#[derive(Debug)]
 pub struct StoreSetRecord {
     pub selector: Felt,
     pub entity_id: Felt,
@@ -204,6 +210,7 @@ impl DojoEvent for StoreSetRecord {
     }
 }
 
+#[derive(Debug)]
 pub struct StoreUpdateRecord {
     pub selector: Felt,
     pub entity_id: Felt,
@@ -229,6 +236,7 @@ impl DojoEvent for StoreUpdateRecord {
     }
 }
 
+#[derive(Debug)]
 pub struct StoreUpdateMember {
     pub selector: Felt,
     pub entity_id: Felt,
@@ -257,6 +265,7 @@ impl DojoEvent for StoreUpdateMember {
     }
 }
 
+#[derive(Debug)]
 pub struct StoreDelRecord {
     pub selector: Felt,
     pub entity_id: Felt,
@@ -278,6 +287,7 @@ impl DojoEvent for StoreDelRecord {
     }
 }
 
+#[derive(Debug)]
 pub struct EventEmitted {
     pub selector: Felt,
     pub system_address: Felt,
