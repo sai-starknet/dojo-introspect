@@ -24,6 +24,7 @@ pub enum DojoSchemaFetcherError {
     InvalidSchema,
 }
 
+/// Makes a call to a contract's entrypoint with an empty calldata.
 async fn empty_call(
     provider: &impl Provider,
     contract_address: Felt,
@@ -40,6 +41,12 @@ async fn empty_call(
         .await?)
 }
 
+/// Determines is a contract is using legacy storage.
+///
+/// Every model deployed prior `1.7.0` is considered to be using legacy storage.
+/// Since `1.7.0`, the user can opt-in to use the legacy storage for backwards compatibility.
+///
+/// Therefore, if the entrypoint is not found, we assume the contract is using legacy storage. New models deployed after `1.7.0` exposes a new entrypoint to determine if the contract is using legacy storage.
 async fn is_legacy(
     provider: &impl Provider,
     contract_address: Felt,
@@ -54,7 +61,7 @@ async fn is_legacy(
             1 => Ok(felts[0].is_one()),
             _ => Err(DojoSchemaFetcherError::InvalidLegacyResponse),
         },
-        Err(ProviderError::StarknetError(StarknetError::EntrypointNotFound)) => Ok(false),
+        Err(ProviderError::StarknetError(StarknetError::EntrypointNotFound)) => Ok(true),
         Err(err) => Err(DojoSchemaFetcherError::ProviderError(err)),
     }
 }
@@ -72,11 +79,13 @@ where
     async fn schema(&self, contract_address: Felt) -> Result<StructDef> {
         let schema_call = empty_call(self, contract_address, SCHEMA_ENTRYPOINT_SELECTOR).await;
         let legacy_call = is_legacy(self, contract_address).await;
+
         let legacy = legacy_call?;
         let schema_call_result = match schema_call {
             Ok(felts) => felts,
             Err(err) => return Err(anyhow!(DojoSchemaFetcherError::ProviderError(err))),
         };
+
         StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
             .context("failed to deserialize schema")
     }

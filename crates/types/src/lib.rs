@@ -228,10 +228,12 @@ impl DojoTypeDefSerde for EnumDef {
             let variant = VariantDef::dojo_deserialize(data, legacy)?;
             variants.insert((i + legacy_mod).into(), variant);
         }
+
         Some(EnumDef {
             name,
             attrs,
             variants,
+            order: Vec::new(),
         })
     }
 }
