@@ -13,21 +13,22 @@
 //! For this reason, it is important while deserializing a typedef or a value to correctly map the legacy flag.
 
 use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
-use introspect_events::types::TableSchema;
 use introspect_types::{
-    pop_primitive, read_serialized_felt_array, ColumnDef, EnumDef, FieldDef, FixedArrayDef,
-    StructDef, TypeDef, VariantDef,
+    ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, EnumDef, FeltIterator, FixedArrayDef,
+    MemberDef, PrimaryDef, PrimaryTypeDef, StructDef, TableSchema, TupleDef, TypeDef, VariantDef,
+    ascii_str_to_limbs, pop_primitive,
 };
-use introspect_value::FeltIterator;
 use num_traits::ToPrimitive;
-use starknet::core::utils::{get_selector_from_name, parse_cairo_short_string};
+use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
-use std::collections::HashMap;
 pub mod contract;
 
 pub use contract::{DojoSchemaFetcher, DojoSchemaFetcherError};
 #[cfg(test)]
 mod tests;
+
+pub const KEY_ATTRIBUTE_LIMBS: [u64; 4] = ascii_str_to_limbs("key");
+pub const KEY_ATTRIBUTE_FELT: Felt = Felt::from_raw(KEY_ATTRIBUTE_LIMBS);
 
 pub mod primitive {
     use starknet_types_core::felt::Felt;
@@ -58,25 +59,6 @@ pub mod primitive {
 
 fn span_is_singleton(data: &mut FeltIterator) -> bool {
     data.next() == Some(Felt::ONE)
-}
-
-fn dojo_deserialize_array(data: &mut FeltIterator, legacy: bool) -> Option<Box<TypeDef>> {
-    match span_is_singleton(data) {
-        true => Box::<TypeDef>::dojo_deserialize(data, legacy),
-        false => None,
-    }
-}
-
-fn dojo_deserialize_tuple(data: &mut FeltIterator, legacy: bool) -> Option<TypeDef> {
-    let len = data.next()?.to_usize()?;
-    if len == 0 {
-        return Some(TypeDef::None);
-    }
-    let mut elements = Vec::with_capacity(len);
-    for _ in 0..len {
-        elements.push(TypeDef::dojo_deserialize(data, legacy)?);
-    }
-    Some(TypeDef::Tuple(elements))
 }
 
 fn felt_to_utf8_string(felt: Felt) -> Option<String> {
@@ -130,47 +112,25 @@ fn dojo_deserialize_primitive(data: &mut FeltIterator, _legacy: bool) -> Option<
     }
 }
 
-fn member_def_to_field_def(member: FieldDef) -> Option<ColumnDef> {
-    Some(ColumnDef {
-        selector: get_selector_from_name(&member.name).ok()?,
-        name: member.name,
-        attrs: member.attrs,
-        type_def: member.type_def,
-    })
+fn attribute_is_key(attribute: &Attribute) -> bool {
+    attribute.id.to_raw() == KEY_ATTRIBUTE_LIMBS
 }
 
-pub trait DojoTypeDefSerde: Sized {
-    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self>;
-}
-
-pub fn parse_attrs(data: &mut FeltIterator) -> Option<Vec<String>> {
-    Some(
-        read_serialized_felt_array(data)?
-            .into_iter()
-            .map(|v| parse_cairo_short_string(&v).expect("Invalid cairo short string for attr"))
-            .collect::<Vec<String>>(),
-    )
-}
-
-impl DojoTypeDefSerde for Vec<FieldDef> {
+impl<T> DojoTypeDefSerde for Vec<T>
+where
+    T: DojoTypeDefSerde,
+{
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         (0..pop_primitive(data)?)
-            .map(|_| FieldDef::dojo_deserialize(data, legacy))
+            .map(|_| T::dojo_deserialize(data, legacy))
             .collect()
     }
 }
 
-impl DojoTypeDefSerde for FieldDef {
-    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
-        let name = data.next().and_then(felt_to_utf8_string)?;
-        let attrs = parse_attrs(data)?;
-        let is_key = attrs.iter().any(|attr| attr == "key");
-        let type_def = TypeDef::dojo_deserialize(data, legacy || is_key)?;
-        Some(FieldDef {
-            name,
-            attrs,
-            type_def,
-        })
+pub trait DojoTypeDefSerde: Sized {
+    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self>;
+    fn dojo_deserialize_boxed(data: &mut FeltIterator, legacy: bool) -> Option<Box<Self>> {
+        Self::dojo_deserialize(data, legacy).map(Box::new)
     }
 }
 
@@ -179,7 +139,7 @@ impl DojoTypeDefSerde for FixedArrayDef {
         if !span_is_singleton(data) {
             return None;
         }
-        let type_def = Box::<TypeDef>::dojo_deserialize(data, legacy)?;
+        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
         let size = data.next()?.to_u32()?;
         Some(FixedArrayDef { type_def, size })
     }
@@ -188,13 +148,25 @@ impl DojoTypeDefSerde for FixedArrayDef {
 impl DojoTypeDefSerde for StructDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
-        let attrs = parse_attrs(data)?;
-        let is_key = attrs.iter().any(|attr| attr == "key");
-        let fields = Vec::<FieldDef>::dojo_deserialize(data, legacy || is_key)?;
+        let attributes = Vec::<Attribute>::dojo_deserialize(data, legacy)?;
+        let members = Vec::<MemberDef>::dojo_deserialize(data, legacy)?;
         Some(StructDef {
             name,
-            attrs,
-            fields,
+            attributes,
+            members,
+        })
+    }
+}
+
+impl DojoTypeDefSerde for MemberDef {
+    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
+        let name = pop_short_string(data)?;
+        let attributes = Vec::<Attribute>::dojo_deserialize(data, legacy)?;
+        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
+        Some(MemberDef {
+            name,
+            attributes,
+            type_def,
         })
     }
 }
@@ -202,11 +174,11 @@ impl DojoTypeDefSerde for StructDef {
 impl DojoTypeDefSerde for VariantDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
-        let attrs = vec![];
+        let attributes = vec![];
         let type_def = TypeDef::dojo_deserialize(data, legacy)?;
         Some(VariantDef {
             name,
-            attrs,
+            attributes,
             type_def,
         })
     }
@@ -215,25 +187,34 @@ impl DojoTypeDefSerde for VariantDef {
 impl DojoTypeDefSerde for EnumDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = data.next().and_then(felt_to_utf8_string)?;
-
-        let attrs = parse_attrs(data)?;
-        let is_key = attrs.iter().any(|attr| attr == "key");
-        let legacy = legacy || is_key;
-
+        let attributes = Vec::<Attribute>::dojo_deserialize(data, legacy)?;
         let legacy_mod: usize = (!legacy).into();
+        let variants = Vec::<VariantDef>::dojo_deserialize(data, legacy)?
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| ((i + legacy_mod).into(), v))
+            .collect::<Vec<_>>();
+        Some(EnumDef::new(
+            name.clone(),
+            attributes.clone(),
+            variants.clone(),
+        ))
+    }
+}
 
-        let variants_len = data.next()?.to_usize()?;
-        let mut variants = HashMap::with_capacity(variants_len);
-        for i in 0..variants_len {
-            let variant = VariantDef::dojo_deserialize(data, legacy)?;
-            variants.insert((i + legacy_mod).into(), variant);
+impl DojoTypeDefSerde for ArrayDef {
+    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
+        match span_is_singleton(data) {
+            true => TypeDef::dojo_deserialize(data, legacy).map(ArrayDef::new),
+            false => None,
         }
+    }
+}
 
-        Some(EnumDef {
-            name,
-            attrs,
-            variants,
-            order: Vec::new(),
+impl DojoTypeDefSerde for TupleDef {
+    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
+        Some(TupleDef {
+            elements: Vec::<TypeDef>::dojo_deserialize(data, legacy)?,
         })
     }
 }
@@ -241,23 +222,15 @@ impl DojoTypeDefSerde for EnumDef {
 impl DojoTypeDefSerde for ColumnDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         let name = pop_short_string(data)?;
-        let attrs = parse_attrs(data)?;
-        let type_def = TypeDef::dojo_deserialize(data, legacy)?;
-        let selector = get_selector_from_name(&name).ok()?;
+        let attributes = Vec::<Attribute>::dojo_deserialize(data, legacy)?;
+        let is_key = attributes.iter().any(attribute_is_key);
+        let type_def = TypeDef::dojo_deserialize(data, legacy || is_key)?;
         Some(ColumnDef {
-            selector,
+            id: get_selector_from_name(&name).ok()?,
             name,
-            attrs,
+            attributes,
             type_def,
         })
-    }
-}
-
-impl DojoTypeDefSerde for Vec<ColumnDef> {
-    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
-        (0..pop_primitive(data)?)
-            .map(|_| ColumnDef::dojo_deserialize(data, legacy))
-            .collect()
     }
 }
 
@@ -268,12 +241,22 @@ impl DojoTypeDefSerde for TypeDef {
             0 => dojo_deserialize_primitive(data, legacy),
             1 => StructDef::dojo_deserialize(data, legacy).map(TypeDef::Struct),
             2 => EnumDef::dojo_deserialize(data, legacy).map(TypeDef::Enum),
-            3 => dojo_deserialize_tuple(data, legacy),
-            4 => dojo_deserialize_array(data, legacy).map(TypeDef::Array),
-            5 => Some(TypeDef::ByteArray),
-            6 => FixedArrayDef::dojo_deserialize(data, legacy).map(TypeDef::FixedArray),
+            3 => TupleDef::dojo_deserialize(data, legacy).map(TupleDef::to_type_def),
+            4 => ArrayDef::dojo_deserialize_boxed(data, legacy).map(TypeDef::Array),
+            5 => Some(TypeDef::ByteArray(ByteArrayDeserialization::Serde)),
+            6 => FixedArrayDef::dojo_deserialize(data, legacy)
+                .map(|x| TypeDef::FixedArray(Box::new(x))),
             _ => None,
         }
+    }
+}
+
+impl DojoTypeDefSerde for Attribute {
+    fn dojo_deserialize(data: &mut FeltIterator, _legacy: bool) -> Option<Self> {
+        Some(Attribute {
+            id: data.next()?,
+            data: vec![],
+        })
     }
 }
 
@@ -283,26 +266,30 @@ impl DojoTypeDefSerde for Box<TypeDef> {
     }
 }
 
+fn dojo_primary_def() -> PrimaryDef {
+    PrimaryDef {
+        name: "entity_id".to_string(),
+        attributes: vec![],
+        type_def: PrimaryTypeDef::Felt252,
+    }
+}
+
 pub fn make_dojo_table(
     namespace: &str,
-    model_name: &str,
+    name: &str,
     data: Vec<Felt>,
     legacy: bool,
 ) -> Option<TableSchema> {
     let mut data = data.into_iter();
-    let table_name = format!("{}-{}", namespace, model_name);
-    let schema = StructDef::dojo_deserialize(&mut data, legacy)?;
-    let table_id = compute_selector_from_namespace_and_name(namespace, model_name);
-    let fields = schema
-        .fields
-        .into_iter()
-        .map(member_def_to_field_def)
-        .collect::<Option<Vec<_>>>()?
-        .into();
+    let _struct_name = pop_short_string(&mut data)?;
+    let attributes = Vec::<Attribute>::dojo_deserialize(&mut data, legacy)?;
+    let columns = Vec::<ColumnDef>::dojo_deserialize(&mut data, legacy)?.into();
+
     Some(TableSchema {
-        table_id,
-        table_name,
-        attrs: schema.attrs,
-        fields,
+        id: compute_selector_from_namespace_and_name(namespace, name),
+        name: format!("{}-{}", namespace, name),
+        attributes,
+        primary: dojo_primary_def(),
+        columns,
     })
 }

@@ -28,12 +28,8 @@ serde = "1.0.228"
 starknet = "0.17.0"
 starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
-introspect-value = { git = "https://github.com/cartridge-gg/introspect", rev = "79a2a2e" }
-introspect-types = { git = "https://github.com/cartridge-gg/introspect", rev = "79a2a2e" }
-introspect-events = { git = "https://github.com/cartridge-gg/introspect", rev = "79a2a2e" }
-#introspect-value = { path = "../introspect/crates/value" }
-#introspect-types = { path = "../introspect/crates/types" }
-#introspect-events = { path = "../introspect/crates/events" }
+introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch = "next-2" }
+introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "next-2" }
 dojo-introspect-utils = { path = "crates/utils" }
 dojo-introspect-types = { path = "crates/types" }
 thiserror = "2.0.17"
