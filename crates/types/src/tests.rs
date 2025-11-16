@@ -1,20 +1,9 @@
-use crate::{DojoTypeDefSerde, KEY_ATTRIBUTE_FELT, make_dojo_table, pop_short_string};
+use crate::{DojoSchema, DojoTypeDefSerde, KEY_ATTRIBUTE_FELT};
 use introspect_types::{
-    ArrayDef, Attribute, ColumnDef, EnumDef, MemberDef, StructDef, TypeDef, VariantDef,
+    ArrayDef, Attribute, ColumnDef, EnumDef, MemberDef, StructDef, ToValue, TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
-
-fn parse_schema(data: Vec<Felt>, legacy: bool) -> Option<(String, Vec<Attribute>, Vec<ColumnDef>)> {
-    let mut data = data.into_iter();
-    let struct_name = pop_short_string(&mut data)?;
-    let attributes = Vec::<Attribute>::dojo_deserialize(&mut data, legacy)?;
-    let column_defs = Vec::<ColumnDef>::dojo_deserialize(&mut data, legacy)?;
-    match data.next() {
-        Some(_) => None,
-        None => Some((struct_name, attributes, column_defs)),
-    }
-}
 
 fn verify_schema(
     data: Vec<Felt>,
@@ -23,10 +12,14 @@ fn verify_schema(
     expected_attributes: &[Attribute],
     expected_column_defs: &[ColumnDef],
 ) {
-    let (struct_name, attributes, column_defs) = parse_schema(data, legacy).unwrap();
-    assert_eq!(struct_name, expected_name);
-    assert_eq!(attributes, expected_attributes);
-    assert_eq!(column_defs, expected_column_defs);
+    let mut data = data.into_iter();
+    let schema = DojoSchema::dojo_deserialize(&mut data, legacy).unwrap();
+    if data.next().is_some() {
+        panic!("Extra data remaining after deserialization");
+    }
+    assert_eq!(schema.name, expected_name);
+    assert_eq!(schema.attributes, expected_attributes);
+    assert_eq!(schema.columns, expected_column_defs);
 }
 
 fn test_schema_felts() -> Vec<Felt> {
@@ -675,12 +668,10 @@ fn test_parse_struct() {
     println!("Testing struct deserialization and parsing");
     let table_data = test_schema_felts();
 
-    let table_fields_def = make_dojo_table("test", "test", table_data, true).unwrap();
+    let schema = DojoSchema::dojo_deserialize(&mut table_data.into_iter(), true).unwrap();
     let mut record_data = test_record_felts().into_iter();
-    println!("{:?}", table_fields_def);
-    let parsed = table_fields_def
-        .to_record(Felt::ZERO, &mut record_data)
-        .unwrap();
+    println!("{:?}", schema);
+    let parsed = schema.columns.to_value(&mut record_data).unwrap();
     println!("{:?}", parsed);
 }
 

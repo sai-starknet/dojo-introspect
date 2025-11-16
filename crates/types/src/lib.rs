@@ -19,6 +19,7 @@ use introspect_types::{
     ascii_str_to_limbs, pop_primitive,
 };
 use num_traits::ToPrimitive;
+use serde::{Deserialize, Serialize};
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
 pub mod contract;
@@ -57,8 +58,7 @@ pub mod primitive {
         Felt::from_hex_unchecked("0x737461726b6e65743a3a45746841646472657373");
 }
 
-
-pub trait IsDojoKey{
+pub trait IsDojoKey {
     fn is_dojo_key(&self) -> bool;
 }
 
@@ -239,7 +239,7 @@ impl DojoTypeDefSerde for ColumnDef {
     }
 }
 
-impl IsDojoKey for ColumnDef{
+impl IsDojoKey for ColumnDef {
     fn is_dojo_key(&self) -> bool {
         self.attributes.iter().any(attribute_is_key)
     }
@@ -254,7 +254,7 @@ impl DojoTypeDefSerde for TypeDef {
             2 => EnumDef::dojo_deserialize(data, legacy).map(TypeDef::Enum),
             3 => TupleDef::dojo_deserialize(data, legacy).map(TupleDef::to_type_def),
             4 => ArrayDef::dojo_deserialize_boxed(data, legacy).map(TypeDef::Array),
-            5 => Some(TypeDef::ByteArray(ByteArrayDeserialization::Serde)),
+            5 => Some(TypeDef::Utf8Array(ByteArrayDeserialization::Serde)),
             6 => FixedArrayDef::dojo_deserialize(data, legacy)
                 .map(|x| TypeDef::FixedArray(Box::new(x))),
             _ => None,
@@ -277,30 +277,42 @@ impl DojoTypeDefSerde for Box<TypeDef> {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct DojoSchema {
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub columns: Vec<ColumnDef>,
+}
+
+impl DojoTypeDefSerde for DojoSchema {
+    fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
+        let name = pop_short_string(data)?;
+        let attributes = Vec::<Attribute>::dojo_deserialize(data, legacy)?;
+        let columns = Vec::<ColumnDef>::dojo_deserialize(data, legacy)?;
+        Some(DojoSchema {
+            name,
+            attributes,
+            columns,
+        })
+    }
+}
+
+impl DojoSchema {
+    pub fn to_table_schema(&self, namespace: &str, name: &str) -> TableSchema {
+        TableSchema {
+            id: compute_selector_from_namespace_and_name(namespace, name),
+            name: format!("{}-{}", namespace, name),
+            attributes: self.attributes.clone(),
+            primary: dojo_primary_def(),
+            columns: self.columns.clone(),
+        }
+    }
+}
+
 fn dojo_primary_def() -> PrimaryDef {
     PrimaryDef {
         name: "entity_id".to_string(),
         attributes: vec![],
         type_def: PrimaryTypeDef::Felt252,
     }
-}
-
-pub fn make_dojo_table(
-    namespace: &str,
-    name: &str,
-    data: Vec<Felt>,
-    legacy: bool,
-) -> Option<TableSchema> {
-    let mut data = data.into_iter();
-    let _struct_name = pop_short_string(&mut data)?;
-    let attributes = Vec::<Attribute>::dojo_deserialize(&mut data, legacy)?;
-    let columns = Vec::<ColumnDef>::dojo_deserialize(&mut data, legacy)?.into();
-
-    Some(TableSchema {
-        id: compute_selector_from_namespace_and_name(namespace, name),
-        name: format!("{}-{}", namespace, name),
-        attributes,
-        primary: dojo_primary_def(),
-        columns,
-    })
 }
