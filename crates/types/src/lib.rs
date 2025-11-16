@@ -57,6 +57,11 @@ pub mod primitive {
         Felt::from_hex_unchecked("0x737461726b6e65743a3a45746841646472657373");
 }
 
+
+pub trait IsDojoKey{
+    fn is_dojo_key(&self) -> bool;
+}
+
 fn span_is_singleton(data: &mut FeltIterator) -> bool {
     data.next() == Some(Felt::ONE)
 }
@@ -231,6 +236,12 @@ impl DojoTypeDefSerde for ColumnDef {
             attributes,
             type_def,
         })
+    }
+}
+
+impl IsDojoKey for ColumnDef{
+    fn is_dojo_key(&self) -> bool {
+        self.attributes.iter().any(attribute_is_key)
     }
 }
 
