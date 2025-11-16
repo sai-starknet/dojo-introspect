@@ -1,14 +1,10 @@
-use crate::DojoTypeDefSerde;
-use anyhow::{anyhow, Context, Result};
+use crate::{DojoSchema, DojoTypeDefSerde};
+use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
-use introspect_types::StructDef;
 use num_traits::One;
-use starknet::core::types::StarknetError;
+use starknet::core::types::{BlockId, BlockTag, FunctionCall, StarknetError};
 use starknet::macros::selector;
-use starknet::{
-    core::types::{BlockId, BlockTag, FunctionCall},
-    providers::{Provider, ProviderError},
-};
+use starknet::providers::{Provider, ProviderError};
 use starknet_types_core::felt::Felt;
 
 const SCHEMA_ENTRYPOINT_SELECTOR: Felt = selector!("schema");
@@ -68,7 +64,7 @@ async fn is_legacy(
 
 #[async_trait]
 pub trait DojoSchemaFetcher {
-    async fn schema(&self, contract_address: Felt) -> Result<StructDef>;
+    async fn schema(&self, contract_address: Felt) -> Result<DojoSchema>;
 }
 
 #[async_trait]
@@ -76,7 +72,7 @@ impl<P> DojoSchemaFetcher for P
 where
     P: Provider + Send + Sync,
 {
-    async fn schema(&self, contract_address: Felt) -> Result<StructDef> {
+    async fn schema(&self, contract_address: Felt) -> Result<DojoSchema> {
         let schema_call = empty_call(self, contract_address, SCHEMA_ENTRYPOINT_SELECTOR).await;
         let legacy_call = is_legacy(self, contract_address).await;
 
@@ -86,7 +82,7 @@ where
             Err(err) => return Err(anyhow!(DojoSchemaFetcherError::ProviderError(err))),
         };
 
-        StructDef::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
+        DojoSchema::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
             .context("failed to deserialize schema")
     }
 }
