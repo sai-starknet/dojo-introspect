@@ -254,7 +254,7 @@ impl DojoTypeDefSerde for TypeDef {
             2 => EnumDef::dojo_deserialize(data, legacy).map(TypeDef::Enum),
             3 => TupleDef::dojo_deserialize(data, legacy).map(TupleDef::to_type_def),
             4 => ArrayDef::dojo_deserialize_boxed(data, legacy).map(TypeDef::Array),
-            5 => Some(TypeDef::Utf8Array(ByteArrayDeserialization::Serde)),
+            5 => Some(TypeDef::Utf8String(ByteArrayDeserialization::Serde)),
             6 => FixedArrayDef::dojo_deserialize(data, legacy)
                 .map(|x| TypeDef::FixedArray(Box::new(x))),
             _ => None,

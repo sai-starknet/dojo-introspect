@@ -963,10 +963,11 @@ dependencies = [
 [[package]]
 name = "introspect-types"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=next-2#ad71ee3390ace2dfe39104249f6a2947bfca9165"
+source = "git+https://github.com/cartridge-gg/introspect?branch=next-2#7435319ee88f3e41b7531b53b313913be7f2f9b8"
 dependencies = [
  "cainome-cairo-serde",
  "convert_case",
+ "hex",
  "lambdaworks-math",
  "num-traits",
  "primitive-types 0.14.0",
