@@ -15,8 +15,8 @@
 use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
 use introspect_types::{
     ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, EnumDef, FeltIterator, FixedArrayDef,
-    MemberDef, PrimaryDef, PrimaryTypeDef, StructDef, TableSchema, TupleDef, TypeDef, VariantDef,
-    ascii_str_to_limbs, pop_primitive,
+    ItemDefTrait, MemberDef, PrimaryDef, PrimaryTypeDef, StructDef, TableSchema, TupleDef, TypeDef,
+    VariantDef, ascii_str_to_limbs, pop_primitive,
 };
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
@@ -139,6 +139,16 @@ pub trait DojoTypeDefSerde: Sized {
     }
 }
 
+trait DojoItemSerde: Sized {
+    fn dojo_deserialize_item(data: &mut FeltIterator, legacy: bool) -> Option<TypeDef>;
+}
+
+impl<Item: DojoTypeDefSerde + ItemDefTrait> DojoItemSerde for Item {
+    fn dojo_deserialize_item(data: &mut FeltIterator, legacy: bool) -> Option<TypeDef> {
+        Item::dojo_deserialize(data, legacy).map(Item::wrap_to_type_def)
+    }
+}
+
 impl DojoTypeDefSerde for FixedArrayDef {
     fn dojo_deserialize(data: &mut FeltIterator, legacy: bool) -> Option<Self> {
         if !span_is_singleton(data) {
@@ -250,13 +260,12 @@ impl DojoTypeDefSerde for TypeDef {
         let kind = data.next()?.to_u32()?;
         match kind {
             0 => dojo_deserialize_primitive(data, legacy),
-            1 => StructDef::dojo_deserialize(data, legacy).map(TypeDef::Struct),
-            2 => EnumDef::dojo_deserialize(data, legacy).map(TypeDef::Enum),
+            1 => StructDef::dojo_deserialize_item(data, legacy),
+            2 => EnumDef::dojo_deserialize_item(data, legacy),
             3 => TupleDef::dojo_deserialize(data, legacy).map(TupleDef::to_type_def),
-            4 => ArrayDef::dojo_deserialize_boxed(data, legacy).map(TypeDef::Array),
+            4 => ArrayDef::dojo_deserialize_item(data, legacy),
             5 => Some(TypeDef::Utf8String(ByteArrayDeserialization::Serde)),
-            6 => FixedArrayDef::dojo_deserialize(data, legacy)
-                .map(|x| TypeDef::FixedArray(Box::new(x))),
+            6 => FixedArrayDef::dojo_deserialize_item(data, legacy),
             _ => None,
         }
     }
