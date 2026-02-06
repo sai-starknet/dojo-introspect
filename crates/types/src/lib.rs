@@ -25,7 +25,6 @@ use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
 
 pub mod contract;
-pub mod event;
 pub use contract::{DojoSchemaFetcher, DojoSchemaFetcherError};
 mod error;
 #[cfg(test)]

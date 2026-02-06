@@ -3,16 +3,10 @@ use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::felt::IntoFeltSource;
 use introspect_types::{
     CairoDeserialize, CairoEvent, CairoSerde, DecodeError, DecodeResult, FeltSource, TypeDef,
+    cairo_event_name_and_selector,
 };
 use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
-
-macro_rules! impl_dojo_event_name {
-    ($name:literal) => {
-        const NAME: &'static str = $name;
-        const SELECTOR: Felt = selector!($name);
-    };
-}
 
 pub enum DojoEvents {
     ModelRegistered(ModelRegistered),
@@ -27,23 +21,23 @@ pub enum DojoEvents {
     EventEmitted(EventEmitted),
 }
 
-pub trait DojoEvent
-where
-    Self: Sized,
-{
-    const NAME: &'static str;
-    const SELECTOR: Felt;
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self>;
-    fn deserialize_complete(keys: Vec<Felt>, data: Vec<Felt>) -> DecodeResult<Self> {
-        let mut keys = keys.into_source();
-        let mut data = data.into_source();
-        let result = Self::deserialize(&mut keys, &mut data)?;
-        match (keys.next(), data.next()) {
-            (Err(DecodeError::Eof), Err(DecodeError::Eof)) => Ok(result),
-            _ => Err(DecodeError::NotEof),
-        }
-    }
-}
+// pub trait DojoEvent
+// where
+//     Self: Sized,
+// {
+//     const NAME: &'static str;
+//     const SELECTOR: Felt;
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self>;
+//     fn deserialize_complete(keys: Vec<Felt>, data: Vec<Felt>) -> DecodeResult<Self> {
+//         let mut keys = keys.into_source();
+//         let mut data = data.into_source();
+//         let result = Self::deserialize(&mut keys, &mut data)?;
+//         match (keys.next(), data.next()) {
+//             (Err(DecodeError::Eof), Err(DecodeError::Eof)) => Ok(result),
+//             _ => Err(DecodeError::NotEof),
+//         }
+//     }
+// }
 
 #[derive(Debug)]
 pub struct ModelRegistered {
@@ -53,8 +47,8 @@ pub struct ModelRegistered {
     pub address: Felt,
 }
 
-impl<F: FeltSource> CairoEvent<CairoSerde<F>> for ModelRegistered {
-    impl_dojo_event_name!("ModelRegistered");
+impl<F: CairoDeserializer> CairoEvent<CairoSerde<F>> for ModelRegistered {
+    cairo_event_name_and_selector!("ModelRegistered");
     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -74,216 +68,216 @@ impl<F: FeltSource> CairoEvent<CairoSerde<F>> for ModelRegistered {
     }
 }
 
-#[derive(Debug)]
-pub struct ModelWithSchemaRegistered {
-    pub name: String,
-    pub namespace: String,
-    pub schema: TypeDef,
-}
+// #[derive(Debug)]
+// pub struct ModelWithSchemaRegistered {
+//     pub name: String,
+//     pub namespace: String,
+//     pub schema: TypeDef,
+// }
 
-impl CairoEvent for ModelWithSchemaRegistered {
-    impl_dojo_event_name!("ModelWithSchemaRegistered");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut keys: CairoSerde<_> = keys.into();
-        let mut data = DojoSerde::new_from_source(data, true);
-        let name = keys.next_string()?;
-        let namespace = keys.next_string()?;
-        let schema = CairoDeserialize::deserialize(&mut data)?;
-        Ok(Self {
-            name,
-            namespace,
-            schema,
-        })
-    }
-}
+// impl<CairoSerde> CairoEvent for ModelWithSchemaRegistered {
+//     cairo_event_name_and_selector!("ModelWithSchemaRegistered");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut keys: CairoSerde<_> = keys.into();
+//         let mut data = DojoSerde::new_from_source(data, true);
+//         let name = keys.next_string()?;
+//         let namespace = keys.next_string()?;
+//         let schema = CairoDeserialize::deserialize(&mut data)?;
+//         Ok(Self {
+//             name,
+//             namespace,
+//             schema,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct ModelUpgraded {
-    pub selector: Felt,
-    pub class_hash: Felt,
-    pub address: Felt,
-    pub prev_address: Felt,
-}
+// #[derive(Debug)]
+// pub struct ModelUpgraded {
+//     pub selector: Felt,
+//     pub class_hash: Felt,
+//     pub address: Felt,
+//     pub prev_address: Felt,
+// }
 
-impl DojoEvent for ModelUpgraded {
-    impl_dojo_event_name!("ModelUpgraded");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let selector = keys.next()?;
-        let class_hash = data.next()?;
-        let address = data.next()?;
-        let prev_address = data.next()?;
-        Ok(Self {
-            selector,
-            class_hash,
-            address,
-            prev_address,
-        })
-    }
-}
+// impl DojoEvent for ModelUpgraded {
+//     impl_dojo_event_name!("ModelUpgraded");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let selector = keys.next()?;
+//         let class_hash = data.next()?;
+//         let address = data.next()?;
+//         let prev_address = data.next()?;
+//         Ok(Self {
+//             selector,
+//             class_hash,
+//             address,
+//             prev_address,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct EventRegistered {
-    pub name: String,
-    pub namespace: String,
-    pub class_hash: Felt,
-    pub address: Felt,
-}
+// #[derive(Debug)]
+// pub struct EventRegistered {
+//     pub name: String,
+//     pub namespace: String,
+//     pub class_hash: Felt,
+//     pub address: Felt,
+// }
 
-impl DojoEvent for EventRegistered {
-    impl_dojo_event_name!("EventRegistered");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut keys: CairoSerde<_> = keys.into();
-        let name = keys.next_string()?;
-        let namespace = keys.next_string()?;
-        let class_hash = data.next()?;
-        let address = data.next()?;
-        Ok(Self {
-            name,
-            namespace,
-            class_hash,
-            address,
-        })
-    }
-}
+// impl DojoEvent for EventRegistered {
+//     impl_dojo_event_name!("EventRegistered");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut keys: CairoSerde<_> = keys.into();
+//         let name = keys.next_string()?;
+//         let namespace = keys.next_string()?;
+//         let class_hash = data.next()?;
+//         let address = data.next()?;
+//         Ok(Self {
+//             name,
+//             namespace,
+//             class_hash,
+//             address,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct EventUpgraded {
-    pub selector: Felt,
-    pub class_hash: Felt,
-    pub address: Felt,
-    pub prev_address: Felt,
-}
+// #[derive(Debug)]
+// pub struct EventUpgraded {
+//     pub selector: Felt,
+//     pub class_hash: Felt,
+//     pub address: Felt,
+//     pub prev_address: Felt,
+// }
 
-impl DojoEvent for EventUpgraded {
-    impl_dojo_event_name!("EventUpgraded");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let selector = keys.next()?;
-        let class_hash = data.next()?;
-        let address = data.next()?;
-        let prev_address = data.next()?;
-        Ok(Self {
-            selector,
-            class_hash,
-            address,
-            prev_address,
-        })
-    }
-}
+// impl DojoEvent for EventUpgraded {
+//     impl_dojo_event_name!("EventUpgraded");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let selector = keys.next()?;
+//         let class_hash = data.next()?;
+//         let address = data.next()?;
+//         let prev_address = data.next()?;
+//         Ok(Self {
+//             selector,
+//             class_hash,
+//             address,
+//             prev_address,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct StoreSetRecord {
-    pub selector: Felt,
-    pub entity_id: Felt,
-    pub keys: Vec<Felt>,
-    pub values: Vec<Felt>,
-}
+// #[derive(Debug)]
+// pub struct StoreSetRecord {
+//     pub selector: Felt,
+//     pub entity_id: Felt,
+//     pub keys: Vec<Felt>,
+//     pub values: Vec<Felt>,
+// }
 
-impl DojoEvent for StoreSetRecord {
-    impl_dojo_event_name!("StoreSetRecord");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut data: CairoSerde<_> = data.into();
-        let selector = keys.next()?;
-        let entity_id = keys.next()?;
-        let record_keys: Vec<Felt> = data.next_array()?;
-        let record_values: Vec<Felt> = data.next_array()?;
-        Ok(Self {
-            selector,
-            entity_id,
-            keys: record_keys,
-            values: record_values,
-        })
-    }
-}
+// impl DojoEvent for StoreSetRecord {
+//     impl_dojo_event_name!("StoreSetRecord");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut data: CairoSerde<_> = data.into();
+//         let selector = keys.next()?;
+//         let entity_id = keys.next()?;
+//         let record_keys: Vec<Felt> = data.next_array()?;
+//         let record_values: Vec<Felt> = data.next_array()?;
+//         Ok(Self {
+//             selector,
+//             entity_id,
+//             keys: record_keys,
+//             values: record_values,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct StoreUpdateRecord {
-    pub selector: Felt,
-    pub entity_id: Felt,
-    pub values: Vec<Felt>,
-}
+// #[derive(Debug)]
+// pub struct StoreUpdateRecord {
+//     pub selector: Felt,
+//     pub entity_id: Felt,
+//     pub values: Vec<Felt>,
+// }
 
-impl DojoEvent for StoreUpdateRecord {
-    impl_dojo_event_name!("StoreUpdateRecord");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut data: CairoSerde<_> = data.into();
-        let selector = keys.next()?;
-        let entity_id = keys.next()?;
-        let record_values: Vec<Felt> = data.next_array()?;
-        Ok(Self {
-            selector,
-            entity_id,
-            values: record_values,
-        })
-    }
-}
+// impl DojoEvent for StoreUpdateRecord {
+//     impl_dojo_event_name!("StoreUpdateRecord");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut data: CairoSerde<_> = data.into();
+//         let selector = keys.next()?;
+//         let entity_id = keys.next()?;
+//         let record_values: Vec<Felt> = data.next_array()?;
+//         Ok(Self {
+//             selector,
+//             entity_id,
+//             values: record_values,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct StoreUpdateMember {
-    pub selector: Felt,
-    pub entity_id: Felt,
-    pub member_selector: Felt,
-    pub values: Vec<Felt>,
-}
+// #[derive(Debug)]
+// pub struct StoreUpdateMember {
+//     pub selector: Felt,
+//     pub entity_id: Felt,
+//     pub member_selector: Felt,
+//     pub values: Vec<Felt>,
+// }
 
-impl DojoEvent for StoreUpdateMember {
-    impl_dojo_event_name!("StoreUpdateMember");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut data: CairoSerde<_> = data.into();
-        let selector = keys.next()?;
-        let entity_id = keys.next()?;
-        let member_selector = keys.next()?;
-        let member_values: Vec<Felt> = data.next_array()?;
-        Ok(Self {
-            selector,
-            entity_id,
-            member_selector,
-            values: member_values,
-        })
-    }
-}
+// impl DojoEvent for StoreUpdateMember {
+//     impl_dojo_event_name!("StoreUpdateMember");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut data: CairoSerde<_> = data.into();
+//         let selector = keys.next()?;
+//         let entity_id = keys.next()?;
+//         let member_selector = keys.next()?;
+//         let member_values: Vec<Felt> = data.next_array()?;
+//         Ok(Self {
+//             selector,
+//             entity_id,
+//             member_selector,
+//             values: member_values,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct StoreDelRecord {
-    pub selector: Felt,
-    pub entity_id: Felt,
-}
+// #[derive(Debug)]
+// pub struct StoreDelRecord {
+//     pub selector: Felt,
+//     pub entity_id: Felt,
+// }
 
-impl DojoEvent for StoreDelRecord {
-    impl_dojo_event_name!("StoreDelRecord");
-    fn deserialize<K: FeltSource, D: FeltSource>(
-        keys: &mut K,
-        _data: &mut D,
-    ) -> DecodeResult<Self> {
-        let selector = keys.next()?;
-        let entity_id = keys.next()?;
-        Ok(Self {
-            selector,
-            entity_id,
-        })
-    }
-}
+// impl DojoEvent for StoreDelRecord {
+//     impl_dojo_event_name!("StoreDelRecord");
+//     fn deserialize<K: FeltSource, D: FeltSource>(
+//         keys: &mut K,
+//         _data: &mut D,
+//     ) -> DecodeResult<Self> {
+//         let selector = keys.next()?;
+//         let entity_id = keys.next()?;
+//         Ok(Self {
+//             selector,
+//             entity_id,
+//         })
+//     }
+// }
 
-#[derive(Debug)]
-pub struct EventEmitted {
-    pub selector: Felt,
-    pub system_address: Felt,
-    pub keys: Vec<Felt>,
-    pub values: Vec<Felt>,
-}
+// #[derive(Debug)]
+// pub struct EventEmitted {
+//     pub selector: Felt,
+//     pub system_address: Felt,
+//     pub keys: Vec<Felt>,
+//     pub values: Vec<Felt>,
+// }
 
-impl DojoEvent for EventEmitted {
-    impl_dojo_event_name!("EventEmitted");
-    fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
-        let mut data: CairoSerde<_> = data.into();
-        let selector = keys.next()?;
-        let system_address = keys.next()?;
-        let event_keys: Vec<Felt> = data.next_array()?;
-        let event_values: Vec<Felt> = data.next_array()?;
-        Ok(Self {
-            selector,
-            system_address,
-            keys: event_keys,
-            values: event_values,
-        })
-    }
-}
+// impl DojoEvent for EventEmitted {
+//     impl_dojo_event_name!("EventEmitted");
+//     fn deserialize<K: FeltSource, D: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+//         let mut data: CairoSerde<_> = data.into();
+//         let selector = keys.next()?;
+//         let system_address = keys.next()?;
+//         let event_keys: Vec<Felt> = data.next_array()?;
+//         let event_values: Vec<Felt> = data.next_array()?;
+//         Ok(Self {
+//             selector,
+//             system_address,
+//             keys: event_keys,
+//             values: event_values,
+//         })
+//     }
+// }
