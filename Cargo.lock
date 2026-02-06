@@ -388,6 +388,7 @@ dependencies = [
 name = "dojo-introspect-events"
 version = "0.1.0"
 dependencies = [
+ "dojo-introspect-types",
  "introspect-types",
  "starknet",
  "starknet-types-core",
@@ -964,7 +965,6 @@ dependencies = [
 name = "introspect-types"
 version = "0.1.2"
 dependencies = [
- "cainome-cairo-serde",
  "convert_case",
  "hex",
  "lambdaworks-math",
@@ -972,7 +972,9 @@ dependencies = [
  "primitive-types 0.14.0",
  "serde",
  "serde_json",
+ "starknet",
  "starknet-types-core",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

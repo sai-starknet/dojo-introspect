@@ -1,9 +1,9 @@
-use crate::{DojoSchema, DojoSerde, KEY_ATTRIBUTE_FELT};
-use introspect_types::deserialize::{self, CairoDeserializer};
-use introspect_types::parser::TypeParser;
+use crate::{DojoSchema, DojoSerde};
+use introspect_types::deserialize::CairoDeserializer;
+use introspect_types::parser::ParseValues;
 use introspect_types::{
-    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, StructDef,
-    ToValue, TypeDef, VariantDef,
+    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, ParseValue,
+    StructDef, TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
@@ -15,15 +15,15 @@ fn verify_schema(
     expected_attributes: &[Attribute],
     expected_column_defs: &[ColumnDef],
 ) {
-    let mut serde: CairoSerde<_> = data.into();
-    let mut deserializer = DojoSerde::new(&mut serde, legacy);
+    let mut deserializer = DojoSerde::new_from_source(data, legacy);
     let schema = DojoSchema::deserialize(&mut deserializer).unwrap();
-    if serde.next_felt().is_some() {
-        panic!("Extra data remaining after deserialization");
-    }
+
     assert_eq!(schema.name, expected_name);
     assert_eq!(schema.attributes, expected_attributes);
     assert_eq!(schema.columns, expected_column_defs);
+    if deserializer.serde.next_felt().is_ok() {
+        panic!("Extra data remaining after deserialization");
+    }
 }
 
 fn test_schema_felts() -> Vec<Felt> {
@@ -670,12 +670,11 @@ fn test_record_felts() -> Vec<Felt> {
 #[test]
 fn test_parse_struct() {
     println!("Testing struct deserialization and parsing");
-    let mut serde: CairoSerde<_> = test_schema_felts().into();
-    let mut deserializer = DojoSerde::new(&mut serde, true);
+    let mut deserializer = DojoSerde::new_from_source(test_schema_felts(), true);
     let schema = DojoSchema::deserialize(&mut deserializer).unwrap();
     let mut record_data: CairoSerde<_> = test_record_felts().into();
     println!("{:?}", schema);
-    let parsed = schema.columns.to_values(&mut record_data).unwrap();
+    let parsed = schema.columns.parse_values(&mut record_data).unwrap();
     println!("{:?}", parsed);
 }
 

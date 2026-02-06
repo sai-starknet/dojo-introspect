@@ -9,5 +9,6 @@ version.workspace = true
 starknet-types-core.workspace = true
 starknet.workspace = true
 introspect-types.workspace = true
+dojo-introspect-types.workspace = true
 
 [dev-dependencies]

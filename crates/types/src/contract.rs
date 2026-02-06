@@ -1,6 +1,7 @@
-use crate::{DojoSchema, DojoTypeDefSerde};
-use anyhow::{Context, Result, anyhow};
+use crate::{DojoSchema, DojoSerde};
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
+use introspect_types::CairoDeserialize;
 use num_traits::One;
 use starknet::core::types::{BlockId, BlockTag, FunctionCall, StarknetError};
 use starknet::macros::selector;
@@ -81,8 +82,7 @@ where
             Ok(felts) => felts,
             Err(err) => return Err(anyhow!(DojoSchemaFetcherError::ProviderError(err))),
         };
-
-        DojoSchema::dojo_deserialize(&mut schema_call_result.into_iter(), legacy)
-            .context("failed to deserialize schema")
+        let mut deserializer = DojoSerde::new_from_source(schema_call_result, legacy);
+        DojoSchema::deserialize(&mut deserializer).map_err(Into::into)
     }
 }
