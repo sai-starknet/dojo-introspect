@@ -26,7 +26,6 @@ use starknet_types_core::felt::Felt;
 
 pub mod contract;
 pub use contract::{DojoSchemaFetcher, DojoSchemaFetcherError};
-mod error;
 #[cfg(test)]
 mod tests;
 

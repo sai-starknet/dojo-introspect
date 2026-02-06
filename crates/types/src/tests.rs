@@ -2,8 +2,8 @@ use crate::{DojoSchema, DojoSerde};
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::parser::ParseValues;
 use introspect_types::{
-    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, ParseValue,
-    StructDef, TypeDef, VariantDef,
+    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, StructDef,
+    TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
