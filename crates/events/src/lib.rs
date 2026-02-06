@@ -1,5 +1,7 @@
-use introspect_types::read_serialized_felt_array;
-use starknet::core::{codec::Decode, types::ByteArray};
+use introspect_types::deserialize::CairoDeserializer;
+use introspect_types::{CairoDeserialize, CairoSerde, TypeDef, read_serialized_felt_array};
+use starknet::core::codec::Decode;
+use starknet::core::types::ByteArray;
 use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
 use std::slice::Iter;
@@ -50,20 +52,20 @@ impl DojoEvent for ModelRegistered {
     where
         Self: Sized,
     {
-        let mut keys = keys.iter();
-        let mut data = data.into_iter();
-        let name = decode_byte_array_to_string(&mut keys)?;
-        let namespace = decode_byte_array_to_string(&mut keys)?;
-        let class_hash = data.next()?;
-        let address = data.next()?;
-        match (keys.next(), data.next()) {
+        let mut keys: CairoSerde<_> = keys.into();
+        let mut data: CairoSerde<_> = data.into();
+        let name = keys.next_string()?;
+        let namespace = keys.next_string()?;
+        let class_hash = data.next_felt()?;
+        let address = data.next_felt()?;
+        match (keys.next_felt(), data.next_felt()) {
             (None, None) => Some(Self {
                 name,
                 namespace,
                 class_hash,
                 address,
             }),
-            _ => return None,
+            _ => None,
         }
     }
 }
@@ -72,17 +74,17 @@ impl DojoEvent for ModelRegistered {
 pub struct ModelWithSchemaRegistered {
     pub name: String,
     pub namespace: String,
-    pub schema: Vec<Felt>,
+    pub schema: TypeDef,
 }
 
 impl DojoEvent for ModelWithSchemaRegistered {
     impl_dojo_event_name!("ModelWithSchemaRegistered");
     fn new(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
-        let mut keys = keys.iter();
-        let mut data = data.into_iter();
-        let name = decode_byte_array_to_string(&mut keys)?;
-        let namespace = decode_byte_array_to_string(&mut keys)?;
-        let schema = read_serialized_felt_array(&mut data)?;
+        let mut keys: CairoSerde<_> = keys.into();
+        let mut data: CairoSerde<_> = data.into();
+        let name = keys.next_string()?;
+        let namespace = keys.next_string()?;
+        let schema = Dojo;
         match (keys.next(), data.next()) {
             (None, None) => Some(Self {
                 name,

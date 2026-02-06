@@ -1,6 +1,9 @@
-use crate::{DojoSchema, DojoTypeDefSerde, KEY_ATTRIBUTE_FELT};
+use crate::{DojoSchema, DojoSerde, KEY_ATTRIBUTE_FELT};
+use introspect_types::deserialize::{self, CairoDeserializer};
+use introspect_types::parser::TypeParser;
 use introspect_types::{
-    ArrayDef, Attribute, ColumnDef, EnumDef, MemberDef, StructDef, ToValue, TypeDef, VariantDef,
+    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, StructDef,
+    ToValue, TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
@@ -12,9 +15,10 @@ fn verify_schema(
     expected_attributes: &[Attribute],
     expected_column_defs: &[ColumnDef],
 ) {
-    let mut data = data.into_iter();
-    let schema = DojoSchema::dojo_deserialize(&mut data, legacy).unwrap();
-    if data.next().is_some() {
+    let mut serde: CairoSerde<_> = data.into();
+    let mut deserializer = DojoSerde::new(&mut serde, legacy);
+    let schema = DojoSchema::deserialize(&mut deserializer).unwrap();
+    if serde.next_felt().is_some() {
         panic!("Extra data remaining after deserialization");
     }
     assert_eq!(schema.name, expected_name);
@@ -666,12 +670,12 @@ fn test_record_felts() -> Vec<Felt> {
 #[test]
 fn test_parse_struct() {
     println!("Testing struct deserialization and parsing");
-    let table_data = test_schema_felts();
-
-    let schema = DojoSchema::dojo_deserialize(&mut table_data.into_iter(), true).unwrap();
-    let mut record_data = test_record_felts().into_iter();
+    let mut serde: CairoSerde<_> = test_schema_felts().into();
+    let mut deserializer = DojoSerde::new(&mut serde, true);
+    let schema = DojoSchema::deserialize(&mut deserializer).unwrap();
+    let mut record_data: CairoSerde<_> = test_record_felts().into();
     println!("{:?}", schema);
-    let parsed = schema.columns.to_value(&mut record_data).unwrap();
+    let parsed = schema.columns.to_values(&mut record_data).unwrap();
     println!("{:?}", parsed);
 }
 
@@ -717,7 +721,7 @@ fn test_non_legacy_with_enum_schema() {
         ColumnDef {
             id: get_selector_from_name("player").ok().unwrap(),
             name: "player".to_string(),
-            attributes: vec![Attribute::new_empty(KEY_ATTRIBUTE_FELT)],
+            attributes: vec![Attribute::new_empty("key".to_string())],
             type_def: TypeDef::ContractAddress,
         },
         ColumnDef::new(
@@ -832,7 +836,7 @@ fn test_non_legacy_with_enum_and_enum_array_schema() {
         ColumnDef::new(
             get_selector_from_name("enemy_type").ok().unwrap(),
             "enemy_type".to_string(),
-            vec![Attribute::new_empty(KEY_ATTRIBUTE_FELT)],
+            vec![Attribute::new_empty("key".to_string())],
             EnumDef::new_type_def(
                 "EnemyType".to_string(),
                 vec![],
@@ -1018,7 +1022,7 @@ fn test_legacy_with_enum_schema() {
         ColumnDef::new(
             get_selector_from_name("enemy_type").ok().unwrap(),
             "enemy_type".to_string(),
-            vec![Attribute::new_empty(KEY_ATTRIBUTE_FELT)],
+            vec![Attribute::new_empty("key".to_string())],
             EnumDef::new_type_def(
                 "EnemyType".to_string(),
                 vec![],

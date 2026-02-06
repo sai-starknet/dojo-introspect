@@ -963,7 +963,6 @@ dependencies = [
 [[package]]
 name = "introspect-types"
 version = "0.1.2"
-source = "git+https://github.com/cartridge-gg/introspect?branch=next-2#c1d64458a7e4c8040a4b1bb8db798558fbca4b5d"
 dependencies = [
  "cainome-cairo-serde",
  "convert_case",
