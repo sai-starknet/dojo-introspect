@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/events", "crates/types", "crates/utils"]
+members = ["crates/types", "crates/utils"]
 
 [workspace.package]
 edition = "2021"
@@ -31,7 +31,6 @@ starknet-types-core = "0.2.0"
 # introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch = "main" }
 # introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "main" }
 introspect-types = { path = "../introspect/crates/types" }
-introspect-events = { path = "../introspect/crates/events" }
 dojo-introspect-utils = { path = "crates/utils" }
 dojo-introspect-types = { path = "crates/types" }
 thiserror = "2.0.17"

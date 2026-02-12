@@ -385,16 +385,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dojo-introspect-events"
-version = "0.1.0"
-dependencies = [
- "dojo-introspect-types",
- "introspect-types",
- "starknet",
- "starknet-types-core",
-]
-
-[[package]]
 name = "dojo-introspect-types"
 version = "0.1.0"
 dependencies = [

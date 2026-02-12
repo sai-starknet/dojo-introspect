@@ -2,8 +2,8 @@ use crate::{DojoSchema, DojoSerde};
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::parser::ParseValues;
 use introspect_types::{
-    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, MemberDef, StructDef,
-    TypeDef, VariantDef,
+    ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, FeltSource, MemberDef,
+    StructDef, TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
@@ -21,7 +21,7 @@ fn verify_schema(
     assert_eq!(schema.name, expected_name);
     assert_eq!(schema.attributes, expected_attributes);
     assert_eq!(schema.columns, expected_column_defs);
-    if deserializer.serde.next_felt().is_ok() {
+    if deserializer.next().is_ok() {
         panic!("Extra data remaining after deserialization");
     }
 }
