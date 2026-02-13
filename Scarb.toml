@@ -1,41 +1,26 @@
-[workspace.package]
+[package]
+name = "dojo_introspect"
 version = "0.1.0"
 edition = "2024_07"
 cairo-version = "2.12.2"
 scarb-version = "2.12.2"
 repository = "https://github.com/dojoengine/dojo-introspect"
 
-[workspace]
-members = ["packages/*"]
 
-[workspace.dependencies]
-starknet = "2.12.2"
-
-[workspace.tool.fmt]
+[tool.fmt]
 sort-module-level-items = true
 
-[workspace.tool.scarb]
+[tool.scarb]
 allow-prebuilt-plugins = ["snforge_std"]
 
-[package]
-name = "introspect"
-version.workspace = true
-edition.workspace = true
-cairo-version.workspace = true
-scarb-version.workspace = true
-
 [dependencies]
-starknet.workspace = true
-dojo_introspect = { path = "packages/introspect" }
+starknet = "2.13.1"
 
 [dev-dependencies]
 cairo_test = "2.12.2"
 
 [lib]
-
-[tool]
-fmt.workspace = true
-scarb.workspace = true
+path = "package/lib.cairo"
 
 [[target.starknet-contract]]
 sierra = true

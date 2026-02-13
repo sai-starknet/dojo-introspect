@@ -1,14 +1,25 @@
-[workspace]
-resolver = "2"
-
-members = ["crates/types", "crates/utils"]
-
-[workspace.package]
+[package]
+name = "dojo-introspect-types"
 edition = "2021"
 license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/dojoengine/dojo-introspect"
 version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1"
+introspect-types.path = "../introspect/crates/types"
+# introspect-types = {git = ""}
+num-traits = { version = "0.2", default-features = false }
+serde = "1.0.228"
+starknet = "0.17.0"
+starknet-crypto = "0.8"
+starknet-types-core = "0.2.0"
+thiserror = "2.0.17"
+
+[dev-dependencies]
 
 [profile.performance]
 codegen-units = 1
@@ -20,18 +31,5 @@ lto = "fat"
 debug = true
 inherits = "release"
 
-[workspace.dependencies]
-anyhow = "1.0.89"
-cainome-cairo-serde = "0.4.0"
-num-traits = { version = "0.2", default-features = false }
-serde = "1.0.228"
-starknet = "0.17.0"
-starknet-crypto = "0.8"
-starknet-types-core = "0.2.0"
-# introspect-types = { git = "https://github.com/cartridge-gg/introspect", branch = "main" }
-# introspect-events = { git = "https://github.com/cartridge-gg/introspect", branch = "main" }
-introspect-types = { path = "../introspect/crates/types" }
-dojo-introspect-utils = { path = "crates/utils" }
-dojo-introspect-types = { path = "crates/types" }
-thiserror = "2.0.17"
-async-trait = "0.1"
+[lib]
+path = "crate/lib.rs"

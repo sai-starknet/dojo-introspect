@@ -12,7 +12,6 @@
 //!
 //! For this reason, it is important while deserializing a typedef or a value to correctly map the legacy flag.
 
-use dojo_introspect_utils::selector::compute_selector_from_namespace_and_name;
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::deserialize_def::CairoDeserializeItemDef;
 use introspect_types::{
@@ -23,6 +22,8 @@ use introspect_types::{
 use serde::{Deserialize, Serialize};
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
+
+use crate::selector::compute_selector_from_namespace_and_name;
 
 pub const KEY_ATTRIBUTE_LIMBS: [u64; 4] = ascii_str_to_limbs("key");
 pub const KEY_ATTRIBUTE_FELT: Felt = Felt::from_raw(KEY_ATTRIBUTE_LIMBS);
@@ -140,7 +141,7 @@ impl<'a, I: FeltSource> DojoSerde<I> {
     }
     pub fn singleton_span(&mut self) -> DecodeResult<TypeDef> {
         if self.serde.next_felt() != Ok(Felt::ONE) {
-            return Err(DecodeError::Message("Expected singleton span"));
+            return Err(DecodeError::message("Expected singleton span"));
         }
         CairoDeserialize::<Self>::deserialize(self)
     }
@@ -290,7 +291,7 @@ impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for ColumnDef {
         })?;
         Ok(ColumnDef {
             id: get_selector_from_name(&name)
-                .map_err(|_| DecodeError::Message("Non Ascii Name Error"))?,
+                .map_err(|_| DecodeError::message("Non Ascii Name Error"))?,
             name,
             attributes,
             type_def,

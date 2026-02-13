@@ -1,5 +1,4 @@
 use crate::{DojoSchema, DojoSerde};
-use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::parser::ParseValues;
 use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, FeltSource, MemberDef,

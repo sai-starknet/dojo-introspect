@@ -4,10 +4,3 @@ version = 1
 [[package]]
 name = "dojo_introspect"
 version = "0.1.0"
-
-[[package]]
-name = "introspect"
-version = "0.1.0"
-dependencies = [
- "dojo_introspect",
-]
