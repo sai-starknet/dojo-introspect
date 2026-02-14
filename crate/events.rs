@@ -73,7 +73,6 @@ pub struct ModelRegistered {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for ModelRegistered {
-    cairo_event_name_and_selector!("ModelRegistered");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut keys: CairoSerde<_> = keys.into();
         let name = keys.next_string()?;
@@ -97,7 +96,6 @@ pub struct ModelWithSchemaRegistered {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for ModelWithSchemaRegistered {
-    cairo_event_name_and_selector!("ModelWithSchemaRegistered");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut keys: CairoSerde<_> = keys.into();
         let mut data = DojoSerde::new_from_source(data, true);
@@ -121,7 +119,6 @@ pub struct ModelUpgraded {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for ModelUpgraded {
-    cairo_event_name_and_selector!("ModelUpgraded");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let selector = keys.next()?;
         let class_hash = data.next()?;
@@ -145,7 +142,6 @@ pub struct EventRegistered {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for EventRegistered {
-    cairo_event_name_and_selector!("EventRegistered");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut keys: CairoSerde<_> = keys.into();
         let name = keys.next_string()?;
@@ -170,7 +166,6 @@ pub struct EventUpgraded {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for EventUpgraded {
-    cairo_event_name_and_selector!("EventUpgraded");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let selector = keys.next()?;
         let class_hash = data.next()?;
@@ -194,7 +189,6 @@ pub struct StoreSetRecord {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for StoreSetRecord {
-    cairo_event_name_and_selector!("StoreSetRecord");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut data: CairoSerde<_> = data.into();
         let selector = keys.next()?;
@@ -218,7 +212,6 @@ pub struct StoreUpdateRecord {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for StoreUpdateRecord {
-    cairo_event_name_and_selector!("StoreUpdateRecord");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut data: CairoSerde<_> = data.into();
         let selector = keys.next()?;
@@ -241,7 +234,6 @@ pub struct StoreUpdateMember {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for StoreUpdateMember {
-    cairo_event_name_and_selector!("StoreUpdateMember");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut data: CairoSerde<_> = data.into();
         let selector = keys.next()?;
@@ -264,7 +256,6 @@ pub struct StoreDelRecord {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for StoreDelRecord {
-    cairo_event_name_and_selector!("StoreDelRecord");
     fn deserialize_event<K: FeltSource>(keys: &mut K, _data: &mut D) -> DecodeResult<Self> {
         let selector = keys.next()?;
         let entity_id = keys.next()?;
@@ -284,7 +275,6 @@ pub struct EventEmitted {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for EventEmitted {
-    cairo_event_name_and_selector!("EventEmitted");
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let mut data: CairoSerde<_> = data.into();
         let selector = keys.next()?;
@@ -299,3 +289,13 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for EventEmitted {
         })
     }
 }
+cairo_event_name_and_selector!(ModelRegistered);
+cairo_event_name_and_selector!(ModelWithSchemaRegistered);
+cairo_event_name_and_selector!(ModelUpgraded);
+cairo_event_name_and_selector!(EventRegistered);
+cairo_event_name_and_selector!(EventUpgraded);
+cairo_event_name_and_selector!(StoreSetRecord);
+cairo_event_name_and_selector!(StoreUpdateRecord);
+cairo_event_name_and_selector!(StoreUpdateMember);
+cairo_event_name_and_selector!(StoreDelRecord);
+cairo_event_name_and_selector!(EventEmitted);
