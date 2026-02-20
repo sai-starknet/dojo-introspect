@@ -1,7 +1,7 @@
-use crate::DojoSerde;
+use crate::{DojoSchema, DojoSerde};
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::{
-    CairoDeserialize, CairoEvent, CairoSerde, DecodeResult, FeltSource, TypeDef,
+    CairoDeserialize, CairoEvent, CairoSerde, DecodeResult, FeltSource,
     cairo_event_name_and_selector,
 };
 use starknet_types_core::felt::Felt;
@@ -92,7 +92,7 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for ModelRegistered {
 pub struct ModelWithSchemaRegistered {
     pub name: String,
     pub namespace: String,
-    pub schema: TypeDef,
+    pub schema: DojoSchema,
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for ModelWithSchemaRegistered {
