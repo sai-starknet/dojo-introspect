@@ -392,10 +392,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "dojo-introspect-types"
+name = "dojo-introspect"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "introspect-rust-macros",
  "introspect-types",
  "num-traits",
  "serde",

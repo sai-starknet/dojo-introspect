@@ -1,5 +1,5 @@
 [package]
-name = "dojo-introspect-types"
+name = "dojo-introspect"
 edition = "2021"
 license = "Apache-2.0"
 license-file = "LICENSE"
@@ -11,6 +11,7 @@ version = "0.1.0"
 [dependencies]
 async-trait = "0.1"
 introspect-types.path = "../introspect/crates/types"
+introspect-rust-macros.path = "../introspect/crates/macros"
 # introspect-types = {git = ""}
 num-traits = { version = "0.2", default-features = false }
 serde = "1.0.228"

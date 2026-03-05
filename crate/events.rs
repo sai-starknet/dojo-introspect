@@ -1,4 +1,5 @@
 use crate::{DojoSchema, DojoSerde};
+use introspect_rust_macros::EnumFrom;
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::{
     CairoDeserialize, CairoEvent, CairoSerde, DecodeResult, FeltSource,
@@ -6,6 +7,7 @@ use introspect_types::{
 };
 use starknet_types_core::felt::Felt;
 
+#[derive(Debug, EnumFrom)]
 pub enum DojoEvent {
     ModelRegistered(ModelRegistered),
     ModelWithSchemaRegistered(ModelWithSchemaRegistered),
@@ -20,31 +22,6 @@ pub enum DojoEvent {
 }
 
 pub struct DojoEventSerde;
-
-macro_rules! impl_dojo_event_from {
-    ($( $variant:ident ( $ty:ty ) ),+ $(,)?) => {
-        $(
-            impl From<$ty> for DojoEvent {
-                fn from(value: $ty) -> Self {
-                    DojoEvent::$variant(value)
-                }
-            }
-        )+
-    };
-}
-
-impl_dojo_event_from!(
-    ModelRegistered(ModelRegistered),
-    ModelWithSchemaRegistered(ModelWithSchemaRegistered),
-    ModelUpgraded(ModelUpgraded),
-    EventRegistered(EventRegistered),
-    EventUpgraded(EventUpgraded),
-    StoreSetRecord(StoreSetRecord),
-    StoreUpdateRecord(StoreUpdateRecord),
-    StoreUpdateMember(StoreUpdateMember),
-    StoreDelRecord(StoreDelRecord),
-    EventEmitted(EventEmitted),
-);
 
 // pub trait DojoEvent
 // where

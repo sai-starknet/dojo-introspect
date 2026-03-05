@@ -16,8 +16,9 @@ use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::deserialize_def::CairoDeserializeItemDef;
 use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, DecodeError, DecodeResult,
-    EnumDef, FeltSource, FixedArrayDef, MemberDef, PrimaryDef, PrimaryTypeDef, SliceFeltSource,
-    StructDef, TableSchema, TupleDef, TypeDef, VariantDef, ascii_str_to_limbs,
+    EnumDef, FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, OptionDef, PrimaryDef,
+    PrimaryTypeDef, SliceFeltSource, StructDef, TableSchema, TupleDef, TypeDef, VariantDef,
+    ascii_str_to_limbs,
 };
 use serde::{Deserialize, Serialize};
 use starknet::core::utils::get_selector_from_name;
@@ -112,6 +113,22 @@ pub struct DojoSerde<I: FeltSource> {
     legacy: bool,
 }
 
+impl<I: FeltSource> CairoDeserializer for DojoSerde<I> {
+    fn next_felt(&mut self) -> DecodeResult<Felt> {
+        self.serde.next_felt()
+    }
+    fn next_option_is_some(&mut self) -> DecodeResult<bool> {
+        match self.legacy {
+            true => self.serde.next_option_is_some(),
+            false => match self.next_u8()? {
+                1 => Ok(true),
+                2 => Ok(false),
+                other => Err(DecodeError::invalid_enum_selector("Dojo Option", other)),
+            },
+        }
+    }
+}
+
 impl<I: FeltSource> FeltSource for DojoSerde<I> {
     fn next(&mut self) -> Result<Felt, DecodeError> {
         self.serde.next_felt()
@@ -165,18 +182,6 @@ impl<'a, I: FeltSource> DojoSerde<I> {
         let r = f(self);
         self.legacy = prev;
         r
-    }
-}
-
-impl<'a, I, T> CairoDeserialize<DojoSerde<I>> for Vec<T>
-where
-    I: FeltSource,
-    T: CairoDeserialize<DojoSerde<I>>,
-{
-    fn deserialize(deserializer: &mut DojoSerde<I>) -> DecodeResult<Self> {
-        (0..deserializer.serde.next_u32()?)
-            .map(|_| T::deserialize(deserializer))
-            .collect()
     }
 }
 
@@ -237,23 +242,51 @@ impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for StructDef {
     }
 }
 
-impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for EnumDef {
-    fn deserialize(deserializer: &mut DojoSerde<I>) -> DecodeResult<Self> {
+impl<'a, I: FeltSource> CairoDeserializeItemDef<DojoSerde<I>> for EnumDef {
+    fn deserialize_item(deserializer: &mut DojoSerde<I>) -> DecodeResult<TypeDef> {
         let name = deserializer.serde.next_short_string()?;
         let attributes = CairoDeserialize::deserialize(deserializer)?;
-        let legacy_mod: usize = (!deserializer.legacy).into();
         let variants: Vec<VariantDef> = CairoDeserialize::deserialize(deserializer)?;
-        Ok(EnumDef::new(
-            name,
-            attributes,
-            variants
+        if name.starts_with("Option<") {
+            let some = variants
                 .into_iter()
-                .enumerate()
-                .map(|(i, v)| ((i + legacy_mod).into(), v))
-                .collect(),
-        ))
+                .find(|v| v.name.starts_with("Some"))
+                .ok_or_else(|| DecodeError::message("Option enum must have a Some variant"))?;
+            Ok(OptionDef::new(some.type_def).wrap_to_type_def())
+        } else {
+            let legacy_mod: usize = (!deserializer.legacy).into();
+            Ok(EnumDef::new(
+                name,
+                attributes,
+                variants
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, v)| ((i + legacy_mod).into(), v))
+                    .collect(),
+            )
+            .wrap_to_type_def())
+        }
     }
 }
+
+// impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for EnumDef {
+//     fn deserialize(deserializer: &mut DojoSerde<I>) -> DecodeResult<Self> {
+//         let name = deserializer.serde.next_short_string()?;
+//         if name ==
+//         let attributes = CairoDeserialize::deserialize(deserializer)?;
+//         let legacy_mod: usize = (!deserializer.legacy).into();
+//         let variants: Vec<VariantDef> = CairoDeserialize::deserialize(deserializer)?;
+//         Ok(EnumDef::new(
+//             name,
+//             attributes,
+//             variants
+//                 .into_iter()
+//                 .enumerate()
+//                 .map(|(i, v)| ((i + legacy_mod).into(), v))
+//                 .collect(),
+//         ))
+//     }
+// }
 
 impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for MemberDef {
     fn deserialize(deserializer: &mut DojoSerde<I>) -> DecodeResult<Self> {
@@ -304,6 +337,7 @@ pub struct DojoSchema {
     pub name: String,
     pub attributes: Vec<Attribute>,
     pub columns: Vec<ColumnDef>,
+    pub legacy: bool,
 }
 
 impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for DojoSchema {
@@ -315,6 +349,7 @@ impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for DojoSchema {
             name,
             attributes,
             columns,
+            legacy: deserializer.legacy,
         })
     }
 }
@@ -331,7 +366,7 @@ impl DojoSchema {
     }
 }
 
-fn dojo_primary_def() -> PrimaryDef {
+pub fn dojo_primary_def() -> PrimaryDef {
     PrimaryDef {
         name: "entity_id".to_string(),
         attributes: vec![],
