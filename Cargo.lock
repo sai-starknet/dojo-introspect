@@ -949,6 +949,7 @@ dependencies = [
 [[package]]
 name = "introspect-rust-macros"
 version = "0.1.0"
+source = "git+https://github.com/cartridge-gg/introspect?rev=0c0fd17#0c0fd17ea29a769d7b90675e05dd976c49667526"
 dependencies = [
  "paste",
  "proc-macro2",
@@ -960,6 +961,7 @@ dependencies = [
 [[package]]
 name = "introspect-types"
 version = "0.1.2"
+source = "git+https://github.com/cartridge-gg/introspect?rev=0c0fd17#0c0fd17ea29a769d7b90675e05dd976c49667526"
 dependencies = [
  "blake3",
  "convert_case",
