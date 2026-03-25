@@ -2,7 +2,7 @@ use crate::{DojoSchema, DojoSerde};
 use introspect_types::parser::ParseValues;
 use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, FeltSource, MemberDef,
-    StructDef, TypeDef, VariantDef,
+    OptionDef, StructDef, TypeDef, VariantDef,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet_types_core::felt::Felt;
@@ -883,20 +883,7 @@ fn test_non_legacy_with_enum_and_enum_array_schema() {
                         VariantDef::new(
                             "Shield".to_string(),
                             vec![],
-                            EnumDef::new_type_def(
-                                "Option<T>".to_string(),
-                                vec![],
-                                vec![
-                                    (
-                                        Felt::from_hex_unchecked("0x1"),
-                                        VariantDef::new("Some(T)".to_string(), vec![], TypeDef::U8),
-                                    ),
-                                    (
-                                        Felt::from_hex_unchecked("0x2"),
-                                        VariantDef::new("None".to_string(), vec![], TypeDef::None),
-                                    ),
-                                ],
-                            ),
+                            OptionDef::new_type_def(TypeDef::U8),
                         ),
                     ),
                     (
@@ -1061,20 +1048,7 @@ fn test_legacy_with_enum_schema() {
                     MemberDef::new(
                         "shield".to_string(),
                         vec![],
-                        EnumDef::new_type_def(
-                            "Option<T>".to_string(),
-                            vec![],
-                            vec![
-                                (
-                                    Felt::from_hex_unchecked("0x0"),
-                                    VariantDef::new("Some(T)".to_string(), vec![], TypeDef::U8),
-                                ),
-                                (
-                                    Felt::from_hex_unchecked("0x1"),
-                                    VariantDef::new("None".to_string(), vec![], TypeDef::None),
-                                ),
-                            ],
-                        ),
+                        OptionDef::new_type_def(TypeDef::U8),
                     ),
                 ],
             ),

@@ -10,8 +10,8 @@ version = "0.1.0"
 
 [dependencies]
 async-trait = "0.1"
-introspect-types = { git = "https://github.com/cartridge-gg/introspect", rev = "34e93c1" }
-introspect-rust-macros = { git = "https://github.com/cartridge-gg/introspect", rev = "34e93c1" }
+introspect-types = { git = "https://github.com/cartridge-gg/introspect", rev = "4092011" }
+introspect-rust-macros = { git = "https://github.com/cartridge-gg/introspect", rev = "4092011" }
 # introspect-types.path = "../introspect/crates/types"
 # introspect-rust-macros.path = "../introspect/crates/macros"
 num-traits = { version = "0.2", default-features = false }
