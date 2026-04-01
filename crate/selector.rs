@@ -12,7 +12,7 @@ pub fn compute_bytearray_hash(value: &str) -> Felt {
 
 pub fn compute_selector_from_dojo_tag(tag: &str) -> DojoIntrospectResult<Felt> {
     split_tag(tag)
-        .map(|(namespace, name)| compute_selector_from_namespace_and_name(&namespace, &name))
+        .map(|(namespace, name)| compute_selector_from_namespace_and_name(namespace, name))
 }
 
 pub fn compute_selector_from_namespace_and_name(namespace: &str, name: &str) -> Felt {
@@ -23,10 +23,10 @@ pub fn compute_selector_from_namespace_and_name(namespace: &str, name: &str) -> 
 }
 
 /// Get the namespace and the name of a world element from its tag.
-pub fn split_tag(tag: &str) -> DojoIntrospectResult<(String, String)> {
+pub fn split_tag(tag: &str) -> DojoIntrospectResult<(&str, &str)> {
     let parts: Vec<&str> = tag.split(TAG_SEPARATOR).collect();
     match parts.len() {
-        2 => Ok((parts[0].to_string(), parts[1].to_string())),
+        2 => Ok((parts[0], parts[1])),
         _ => Err(DojoIntrospectError::InvalidTagFormat(tag.to_string())),
     }
 }
