@@ -10,8 +10,8 @@ version = "0.1.0"
 
 [dependencies]
 async-trait = "0.1"
-introspect-types = { git = "https://github.com/cartridge-gg/introspect", rev = "b89ee9e" }
-introspect-rust-macros = { git = "https://github.com/cartridge-gg/introspect", rev = "b89ee9e" }
+introspect-types = { git = "https://github.com/cartridge-gg/introspect", rev = "6542dec" }
+introspect-rust-macros = { git = "https://github.com/cartridge-gg/introspect", rev = "6542dec" }
 # introspect-types.path = "../introspect/crates/types"
 # introspect-rust-macros.path = "../introspect/crates/macros"
 num-traits = { version = "0.2", default-features = false }
@@ -20,6 +20,10 @@ starknet = "0.17.0"
 starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
 thiserror = "2.0.17"
+
+starknet-types-raw = { git = "https://github.com/cartridge-gg/starknet-types-raw", branch = "main", features = [
+    "starknet",
+] }
 
 [dev-dependencies]
 

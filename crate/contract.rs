@@ -1,30 +1,33 @@
 use crate::{DojoIntrospectError, DojoIntrospectResult, DojoSchema, DojoSerde};
 use async_trait::async_trait;
 use introspect_types::CairoDeserialize;
-use num_traits::One;
 use starknet::core::types::{BlockId, BlockTag, FunctionCall, StarknetError};
 use starknet::macros::selector;
 use starknet::providers::{Provider, ProviderError};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as SnFelt;
+use starknet_types_raw::Felt;
 
-const SCHEMA_ENTRYPOINT_SELECTOR: Felt = selector!("schema");
-const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: Felt = selector!("use_legacy_storage");
+const SCHEMA_ENTRYPOINT_SELECTOR: SnFelt = selector!("schema");
+const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: SnFelt = selector!("use_legacy_storage");
 
 /// Makes a call to a contract's entrypoint with an empty calldata.
 async fn empty_call(
     provider: &impl Provider,
     contract_address: Felt,
-    entry_point: Felt,
+    entry_point: SnFelt,
 ) -> Result<Vec<Felt>, ProviderError> {
     let call = FunctionCall {
-        contract_address,
-        entry_point_selector: entry_point,
+        contract_address: contract_address.into(),
+        entry_point_selector: entry_point.into(),
         calldata: vec![],
     };
 
     Ok(provider
         .call(call, BlockId::Tag(BlockTag::PreConfirmed))
-        .await?)
+        .await?
+        .iter()
+        .map(Into::into)
+        .collect())
 }
 
 /// Determines is a contract is using legacy storage.
@@ -41,7 +44,11 @@ async fn is_legacy(provider: &impl Provider, contract_address: Felt) -> DojoIntr
     );
     match legacy_call.await {
         Ok(felts) => match felts.len() {
-            1 => Ok(felts[0].is_one()),
+            1 => match felts[0] {
+                Felt::ZERO => Ok(false),
+                Felt::ONE => Ok(true),
+                _ => Err(DojoIntrospectError::InvalidLegacyResponse),
+            },
             _ => Err(DojoIntrospectError::InvalidLegacyResponse),
         },
         Err(ProviderError::StarknetError(StarknetError::EntrypointNotFound)) => Ok(true),

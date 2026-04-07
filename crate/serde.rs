@@ -18,19 +18,16 @@ use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, DecodeError, DecodeResult,
     EnumDef, FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, OptionDef, PrimaryDef,
     PrimaryTypeDef, SliceFeltSource, StructDef, TableSchema, TupleDef, TypeDef, VariantDef,
-    ascii_str_to_limbs,
 };
 use serde::{Deserialize, Serialize};
-use starknet::core::utils::get_selector_from_name;
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 use crate::selector::compute_selector_from_namespace_and_name;
 
-pub const KEY_ATTRIBUTE_LIMBS: [u64; 4] = ascii_str_to_limbs("key");
-pub const KEY_ATTRIBUTE_FELT: Felt = Felt::from_raw(KEY_ATTRIBUTE_LIMBS);
+pub const KEY_ATTRIBUTE_FELT: Felt = Felt::selector("key");
 
 pub mod primitive {
-    use starknet_types_core::felt::Felt;
+    use starknet_types_raw::Felt;
     pub const BOOL_FELT: Felt = Felt::from_hex_unchecked("0x626f6f6c");
     pub const U8_FELT: Felt = Felt::from_hex_unchecked("0x7538");
     pub const U16_FELT: Felt = Felt::from_hex_unchecked("0x753136");
@@ -323,8 +320,7 @@ impl<'a, I: FeltSource> CairoDeserialize<DojoSerde<I>> for ColumnDef {
             CairoDeserialize::deserialize(d)
         })?;
         Ok(ColumnDef {
-            id: get_selector_from_name(&name)
-                .map_err(|_| DecodeError::message("Non Ascii Name Error"))?,
+            id: Felt::selector(&name),
             name,
             attributes,
             type_def,

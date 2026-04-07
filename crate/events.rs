@@ -2,10 +2,9 @@ use crate::{DojoSchema, DojoSerde};
 use introspect_rust_macros::EnumFrom;
 use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::{
-    CairoDeserialize, CairoEvent, CairoSerde, DecodeResult, FeltSource,
-    cairo_event_name_and_selector,
+    CairoDeserialize, CairoEvent, CairoEventInfo, CairoSerde, DecodeResult, FeltSource,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 #[derive(Debug, EnumFrom)]
 pub enum DojoEvent {
@@ -266,13 +265,33 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for EventEmitted {
         })
     }
 }
-cairo_event_name_and_selector!(ModelRegistered);
-cairo_event_name_and_selector!(ModelWithSchemaRegistered);
-cairo_event_name_and_selector!(ModelUpgraded);
-cairo_event_name_and_selector!(EventRegistered);
-cairo_event_name_and_selector!(EventUpgraded);
-cairo_event_name_and_selector!(StoreSetRecord);
-cairo_event_name_and_selector!(StoreUpdateRecord);
-cairo_event_name_and_selector!(StoreUpdateMember);
-cairo_event_name_and_selector!(StoreDelRecord);
-cairo_event_name_and_selector!(EventEmitted);
+impl CairoEventInfo for ModelRegistered {
+    const NAME: &'static str = "ModelRegistered";
+}
+impl CairoEventInfo for ModelWithSchemaRegistered {
+    const NAME: &'static str = "ModelWithSchemaRegistered";
+}
+impl CairoEventInfo for ModelUpgraded {
+    const NAME: &'static str = "ModelUpgraded";
+}
+impl CairoEventInfo for EventRegistered {
+    const NAME: &'static str = "EventRegistered";
+}
+impl CairoEventInfo for EventUpgraded {
+    const NAME: &'static str = "EventUpgraded";
+}
+impl CairoEventInfo for StoreSetRecord {
+    const NAME: &'static str = "StoreSetRecord";
+}
+impl CairoEventInfo for StoreUpdateRecord {
+    const NAME: &'static str = "StoreUpdateRecord";
+}
+impl CairoEventInfo for StoreUpdateMember {
+    const NAME: &'static str = "StoreUpdateMember";
+}
+impl CairoEventInfo for StoreDelRecord {
+    const NAME: &'static str = "StoreDelRecord";
+}
+impl CairoEventInfo for EventEmitted {
+    const NAME: &'static str = "EventEmitted";
+}

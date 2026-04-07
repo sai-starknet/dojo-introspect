@@ -4,8 +4,7 @@ use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, FeltSource, MemberDef,
     OptionDef, StructDef, TypeDef, VariantDef,
 };
-use starknet::core::utils::get_selector_from_name;
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 fn verify_schema(
     data: Vec<Felt>,
@@ -717,13 +716,13 @@ fn test_non_legacy_with_enum_schema() {
     .collect();
     let expected_columns = [
         ColumnDef {
-            id: get_selector_from_name("player").ok().unwrap(),
+            id: Felt::selector("player"),
             name: "player".to_string(),
             attributes: vec![Attribute::new_empty("key".to_string())],
             type_def: TypeDef::ContractAddress,
         },
         ColumnDef::new(
-            get_selector_from_name("direction").ok().unwrap(),
+            Felt::selector("direction"),
             "direction".to_string(),
             vec![],
             TypeDef::Enum(EnumDef::new(
@@ -832,7 +831,7 @@ fn test_non_legacy_with_enum_and_enum_array_schema() {
     .collect();
     let expected_columns = [
         ColumnDef::new(
-            get_selector_from_name("enemy_type").ok().unwrap(),
+            Felt::selector("enemy_type"),
             "enemy_type".to_string(),
             vec![Attribute::new_empty("key".to_string())],
             EnumDef::new_type_def(
@@ -863,7 +862,7 @@ fn test_non_legacy_with_enum_and_enum_array_schema() {
             ),
         ),
         ColumnDef {
-            id: get_selector_from_name("properties").ok().unwrap(),
+            id: Felt::selector("properties"),
             name: "properties".to_string(),
             attributes: vec![],
             type_def: ArrayDef::new_type_def(EnumDef::new_type_def(
@@ -1005,7 +1004,7 @@ fn test_legacy_with_enum_schema() {
 
     let expected_columns = [
         ColumnDef::new(
-            get_selector_from_name("enemy_type").ok().unwrap(),
+            Felt::selector("enemy_type"),
             "enemy_type".to_string(),
             vec![Attribute::new_empty("key".to_string())],
             EnumDef::new_type_def(
@@ -1036,7 +1035,7 @@ fn test_legacy_with_enum_schema() {
             ),
         ),
         ColumnDef::new(
-            get_selector_from_name("characteristics").ok().unwrap(),
+            Felt::selector("characteristics"),
             "characteristics".to_string(),
             vec![],
             StructDef::new_type_def(
@@ -1054,7 +1053,7 @@ fn test_legacy_with_enum_schema() {
             ),
         ),
         ColumnDef::new(
-            get_selector_from_name("speed").ok().unwrap(),
+            Felt::selector("speed"),
             "speed".to_string(),
             vec![],
             EnumDef::new_type_def(
@@ -1077,7 +1076,7 @@ fn test_legacy_with_enum_schema() {
             ),
         ),
         ColumnDef::new(
-            get_selector_from_name("is_set").ok().unwrap(),
+            Felt::selector("is_set"),
             "is_set".to_string(),
             vec![],
             TypeDef::Bool,
