@@ -4,7 +4,7 @@ use introspect_types::{
     ArrayDef, Attribute, CairoDeserialize, CairoSerde, ColumnDef, EnumDef, FeltSource, MemberDef,
     OptionDef, StructDef, TypeDef, VariantDef,
 };
-use starknet_types_raw::Felt;
+use sai_felt::Felt;
 
 fn verify_schema(
     data: Vec<Felt>,

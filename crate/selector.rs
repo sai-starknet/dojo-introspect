@@ -1,7 +1,7 @@
 use introspect_types::utils::string_to_cairo_serialize_byte_array;
+use sai_felt::Felt;
+use starknet::core::types::Felt as SnFelt;
 use starknet_crypto::poseidon_hash_many;
-use starknet_types_core::felt::Felt as SnFelt;
-use starknet_types_raw::Felt;
 
 use crate::{DojoIntrospectError, DojoIntrospectResult};
 

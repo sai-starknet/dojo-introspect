@@ -4,7 +4,7 @@ use introspect_types::deserialize::CairoDeserializer;
 use introspect_types::{
     CairoDeserialize, CairoEvent, CairoEventInfo, CairoSerde, DecodeResult, FeltSource,
 };
-use starknet_types_raw::Felt;
+use sai_felt::Felt;
 
 #[derive(Debug, EnumFrom)]
 pub enum DojoEvent {

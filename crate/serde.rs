@@ -20,14 +20,14 @@ use introspect_types::{
     PrimaryTypeDef, SliceFeltSource, StructDef, TableSchema, TupleDef, TypeDef, VariantDef,
 };
 use serde::{Deserialize, Serialize};
-use starknet_types_raw::Felt;
+use sai_felt::Felt;
 
 use crate::selector::compute_selector_from_namespace_and_name;
 
 pub const KEY_ATTRIBUTE_FELT: Felt = Felt::selector("key");
 
 pub mod primitive {
-    use starknet_types_raw::Felt;
+    use sai_felt::Felt;
     pub const BOOL_FELT: Felt = Felt::from_hex_unchecked("0x626f6f6c");
     pub const U8_FELT: Felt = Felt::from_hex_unchecked("0x7538");
     pub const U16_FELT: Felt = Felt::from_hex_unchecked("0x753136");

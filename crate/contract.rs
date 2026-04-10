@@ -1,11 +1,10 @@
 use crate::{DojoIntrospectError, DojoIntrospectResult, DojoSchema, DojoSerde};
 use async_trait::async_trait;
 use introspect_types::CairoDeserialize;
-use starknet::core::types::{BlockId, BlockTag, FunctionCall, StarknetError};
+use sai_felt::Felt;
+use starknet::core::types::{BlockId, BlockTag, Felt as SnFelt, FunctionCall, StarknetError};
 use starknet::macros::selector;
 use starknet::providers::{Provider, ProviderError};
-use starknet_types_core::felt::Felt as SnFelt;
-use starknet_types_raw::Felt;
 
 const SCHEMA_ENTRYPOINT_SELECTOR: SnFelt = selector!("schema");
 const USE_LEGACY_STORAGE_ENTRYPOINT_SELECTOR: SnFelt = selector!("use_legacy_storage");
